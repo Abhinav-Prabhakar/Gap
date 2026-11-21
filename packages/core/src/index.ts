@@ -5,4 +5,6 @@ export * from "./errors";
 export * from "./schema";
 export * from "./registry";
 export * from "./action";
+export * from "./compose";
+export * from "./search";
 export * from "./utils";
