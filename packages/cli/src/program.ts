@@ -13,6 +13,7 @@ import { importOpenApi } from "gapmcp-importers";
 import { buildDomManifest, renderDomRuntime } from "gapmcp-dom";
 import { loadRegistry } from "./load";
 import { startInspector } from "./inspector";
+import { scoreAgentReadiness } from "./score";
 
 function packageVersion(): string {
   try {
@@ -420,6 +421,26 @@ export default actions;
         }
       } else {
         console.log(pc.dim("Pass a registry path to validate it: gap doctor gap.actions.ts"));
+      }
+    });
+
+  program
+    .command("score")
+    .argument("<url>", "public app URL to scan")
+    .option("--json", "print the full report as JSON", false)
+    .description("score an app's agent readiness: MCP, auth metadata, DOM hooks and docs")
+    .action(async (url: string, options: { json: boolean }) => {
+      const report = await scoreAgentReadiness(url);
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+        return;
+      }
+      console.log(`${pc.bold(report.url)}  score ${report.score}/100  grade ${report.grade}`);
+      for (const signal of report.signals) {
+        console.log(
+          `${signal.passed ? pc.green("pass") : pc.yellow("miss")}  ${signal.label.padEnd(26)} ${pc.dim(signal.detail)}`,
+        );
+        if (!signal.passed) console.log(pc.dim(`      ${signal.recommendation}`));
       }
     });
 

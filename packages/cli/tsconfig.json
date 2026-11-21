@@ -1,7 +1,36 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "."
+    "baseUrl": ".",
+    "paths": {
+      "gapmcp-core": [
+        "../core/src/index.ts"
+      ],
+      "gapmcp-auth": [
+        "../auth/src/index.ts"
+      ],
+      "gapmcp-policy": [
+        "../policy/src/index.ts"
+      ],
+      "gapmcp-observability": [
+        "../observability/src/index.ts"
+      ],
+      "gapmcp-evals": [
+        "../evals/src/index.ts"
+      ],
+      "gapmcp-importers": [
+        "../importers/src/index.ts"
+      ],
+      "gapmcp-dom": [
+        "../dom/src/index.ts"
+      ],
+      "gapmcp-server": [
+        "../server/src/index.ts"
+      ],
+      "gapmcp-testing": [
+        "../testing/src/index.ts"
+      ]
+    }
   },
   "include": [
     "src/**/*.ts",

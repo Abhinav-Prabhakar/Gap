@@ -312,9 +312,9 @@ export interface GapServerOptions extends HttpServerOptions {
   /** Called for every call with an inspector-friendly record. */
   onCall?: (record: CallRecord) => void;
   /**
-   * Permit unauthenticated HTTP requests. Defaults to `true` for local
-   * development. When an auth provider is configured, a failed authentication
-   * falls back to the anonymous principal only when this is true.
+   * Permit unauthenticated HTTP requests. Defaults to `true` only when no auth
+   * provider is configured. With an auth provider, a failed authentication is
+   * rejected unless this is explicitly true.
    */
   allowAnonymous?: boolean;
   /** Extra dot paths to redact from every successful result. */

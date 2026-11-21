@@ -36,5 +36,8 @@
   "dependencies": {
     "gapmcp-core": "workspace:^",
     "gapmcp-server": "workspace:^"
+  },
+  "devDependencies": {
+    "zod": "^4.6.7"
   }
 }

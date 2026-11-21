@@ -153,8 +153,8 @@ export async function verifySignedHandoffLink(
     valid = await crypto.subtle.verify(
       "HMAC",
       await hmacKey(secret),
-      signatureBytes,
-      encoder.encode(`v1.${payload}`),
+      new Uint8Array(signatureBytes),
+      new Uint8Array(encoder.encode(`v1.${payload}`)),
     );
   } catch {
     return null;

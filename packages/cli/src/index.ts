@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import pc from "picocolors";
 import { main } from "./program";
 

@@ -174,6 +174,10 @@ importers:
       gapmcp-server:
         specifier: workspace:^
         version: link:../server
+    devDependencies:
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
   packages/umbrella:
     dependencies:

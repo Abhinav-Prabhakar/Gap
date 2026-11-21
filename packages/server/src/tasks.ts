@@ -6,6 +6,8 @@ export type TaskRunner = (signal: AbortSignal) => Promise<{ result: unknown; rec
 
 /** Input for {@link TaskManager.start}. */
 export interface StartTaskInput {
+  /** Explicit task id. Generated when omitted. */
+  id?: string;
   action: string;
   principalId: string;
   tenantId?: string;
@@ -71,7 +73,7 @@ export class TaskManager {
     if (this.#closed) throw new Error("TaskManager is closed.");
     const now = this.#now();
     const timestamp = new Date(now).toISOString();
-    const id = createId("task");
+    const id = input.id ?? createId("task");
     const controller = new AbortController();
     const record: TaskRecord = {
       id,

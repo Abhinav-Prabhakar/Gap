@@ -7,7 +7,7 @@ import type { GapServer, GapServerOptions } from "gapmcp-server";
 import { createGapServer } from "gapmcp-server";
 
 export interface InspectorApprovalStore {
-  list(): Array<Record<string, unknown>>;
+  list(): ReadonlyArray<{ status?: string }>;
   approve(id: string): unknown;
   deny(id: string): unknown;
 }
