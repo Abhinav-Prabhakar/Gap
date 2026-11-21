@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": ".",
     "paths": {
       "gapmcp-core": ["../core/src/index.ts"]
     }

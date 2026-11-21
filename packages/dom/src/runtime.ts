@@ -147,9 +147,15 @@ export function renderDomRuntime(options: DomRuntimeOptions = {}): string {
     return String(element.textContent || "").trim();
   }
 
-  function waitForElement(selector) {
-    var existing = null;
-    try { existing = document.querySelector(selector); } catch (error) { existing = null; }
+  function waitForElement(selector, requireValue) {
+    function locate() {
+      var element = null;
+      try { element = document.querySelector(selector); } catch (error) { element = null; }
+      if (!element) return null;
+      if (requireValue && readValue(element) === "") return null;
+      return element;
+    }
+    var existing = locate();
     if (existing) return Promise.resolve(existing);
     return new Promise(function (resolve, reject) {
       var settled = false;
@@ -169,8 +175,7 @@ export function renderDomRuntime(options: DomRuntimeOptions = {}): string {
       }
       function check() {
         if (settled) return;
-        var element = null;
-        try { element = document.querySelector(selector); } catch (error) { element = null; }
+        var element = locate();
         if (element) finish(element);
       }
       observer.observe(document.documentElement || document, {
@@ -208,8 +213,8 @@ export function renderDomRuntime(options: DomRuntimeOptions = {}): string {
     }
     target.click();
     try {
-      if (ui.waitFor) await waitForElement(ui.waitFor);
-      var resultElement = ui.result ? await waitForElement(ui.result) : null;
+      if (ui.waitFor) await waitForElement(ui.waitFor, false);
+      var resultElement = ui.result ? await waitForElement(ui.result, true) : null;
       var value = readValue(resultElement);
       return value === undefined ? { ok: true } : { ok: true, value: value };
     } catch (error) {

@@ -74,7 +74,7 @@ export interface EvalResult {
   choice: ToolChoice;
   /** True only when the tool, arguments and forbidden-tool checks all pass. */
   passed: boolean;
-  /** True when the chosen tool equals `expectedTool` and is not forbidden. */
+  /** True when the chosen tool exactly equals `expectedTool`. */
   toolPassed: boolean;
   /** True when the provided arguments satisfy the expected subset. */
   argsPassed: boolean;
@@ -100,6 +100,8 @@ export interface ConfusionMatrix {
   columns: string[];
   /** `counts[row][column]` is the number of cases in that cell. */
   counts: Record<string, Record<string, number>>;
+  /** Row-major counts aligned with {@link rows} and {@link columns}. */
+  matrix: number[][];
 }
 
 /** The report returned by {@link runEvals}. */

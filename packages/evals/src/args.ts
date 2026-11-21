@@ -14,7 +14,10 @@ function deepEqual(left: unknown, right: unknown): boolean {
     if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
       return false;
     }
-    return left.every((item, index) => deepEqual(item, right[index]));
+    for (let index = 0; index < left.length; index += 1) {
+      if (!deepEqual(left[index], right[index])) return false;
+    }
+    return true;
   }
   if (!isRecord(left) || !isRecord(right)) return false;
 

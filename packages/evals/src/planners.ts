@@ -114,6 +114,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
+ * A URL safe to put in an error message: no credentials, query string or
+ * fragment, so a key embedded in the endpoint cannot leak.
+ */
+function displayEndpoint(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    return "the configured endpoint";
+  }
+}
+
+/**
  * Parse an OpenAI-compatible chat completion into a single tool choice.
  * Missing choices or tool calls mean "no tool"; malformed tool calls throw an
  * UNAVAILABLE error because the provider contract was violated.
@@ -190,13 +203,17 @@ export function httpPlanner(options: HttpPlannerOptions): Planner {
   }
 
   const url = normalizeChatCompletionsEndpoint(endpoint);
+  const endpointLabel = displayEndpoint(url);
   const doFetch: typeof fetch =
     options.fetch ?? ((input, init) => globalThis.fetch(input, init));
 
-  const headers: Record<string, string> = { "content-type": "application/json" };
-  if (options.apiKey) headers.authorization = `Bearer ${options.apiKey}`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (options.apiKey) headers.Authorization = `Bearer ${options.apiKey}`;
   for (const [name, value] of Object.entries(options.headers ?? {})) {
-    headers[name.toLowerCase()] = value;
+    for (const existing of Object.keys(headers)) {
+      if (existing.toLowerCase() === name.toLowerCase()) delete headers[existing];
+    }
+    headers[name] = value;
   }
 
   return {
@@ -224,14 +241,14 @@ export function httpPlanner(options: HttpPlannerOptions): Planner {
         });
       } catch {
         throw new GapError(
-          `Eval planner request to ${url} failed before a response was received.`,
+          `Eval planner request to ${endpointLabel} failed before a response was received.`,
           { code: "UNAVAILABLE" },
         );
       }
 
       if (!response.ok) {
         throw new GapError(
-          `Eval planner request to ${url} failed with HTTP ${response.status}.`,
+          `Eval planner request to ${endpointLabel} failed with HTTP ${response.status}.`,
           {
             code: "UNAVAILABLE",
             status: response.status,
@@ -244,7 +261,7 @@ export function httpPlanner(options: HttpPlannerOptions): Planner {
       try {
         payload = await response.json();
       } catch {
-        throw new GapError(`Eval planner endpoint ${url} returned invalid JSON.`, {
+        throw new GapError(`Eval planner endpoint ${endpointLabel} returned invalid JSON.`, {
           code: "UNAVAILABLE",
         });
       }

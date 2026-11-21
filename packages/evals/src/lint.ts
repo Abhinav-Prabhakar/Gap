@@ -8,52 +8,18 @@ const TOKEN_WARN_THRESHOLD = 120;
 /** Default Jaccard similarity at which two tools are flagged as ambiguous. */
 const AMBIGUITY_THRESHOLD = 0.55;
 
-const STOPWORDS = new Set([
-  "a",
-  "an",
-  "and",
-  "are",
-  "as",
-  "at",
-  "be",
-  "by",
-  "for",
-  "from",
-  "has",
-  "have",
-  "if",
-  "in",
-  "into",
-  "is",
-  "it",
-  "its",
-  "of",
-  "on",
-  "or",
-  "that",
-  "the",
-  "their",
-  "this",
-  "to",
-  "was",
-  "when",
-  "which",
-  "will",
-  "with",
-]);
-
 /**
  * Verbs that describe an observable outcome. A non-read-only tool has to tell
  * the model what it changes; "do the thing" is not a usable description.
  */
 const OUTCOME_PATTERN =
-  /\b(return(?:s|ed|ing)?|creat(?:e|es|ed|ing)|updat(?:e|es|ed|ing)|delet(?:e|es|ed|ing)|remov(?:e|es|ed|ing)|send|sends|sent|charg(?:e|es|ed|ing)|refund(?:s|ed|ing)?|cancel(?:s|ed|ing)?|issu(?:e|es|ed|ing)|pay|pays|paid|transfer(?:s|red|ring)?|writ(?:e|es|ten|ing)|sav(?:e|es|ed|ing)|sets?|add(?:s|ed|ing)?|schedul(?:e|es|ed|ing)|publish(?:es|ed|ing)?|archiv(?:e|es|ed|ing)|approv(?:e|es|ed|ing)|reject(?:s|ed|ing)?|revok(?:e|es|ed|ing)|submit(?:s|ted|ting)?|enroll(?:s|ed|ing)?|assign(?:s|ed|ing)?|clos(?:e|es|ed|ing)|reopen(?:s|ed|ing)?|upload(?:s|ed|ing)?|import(?:s|ed|ing)?)\b/i;
+  /\b(return(?:s|ed|ing)?|creat(?:e|es|ed|ing)|updat(?:e|es|ed|ing)|delet(?:e|es|ed|ing)|remov(?:e|es|ed|ing)|send|sends|sent|charg(?:e|es|ed|ing)|refund(?:s|ed|ing)?|cancel(?:s|ed|ing)?|issu(?:e|es|ed|ing)|pay|pays|paid|transfer(?:s|red|ring)?|writ(?:e|es|ten|ing)|sav(?:e|es|ed|ing)|sets?|add(?:s|ed|ing)?|schedul(?:e|es|ed|ing)|publish(?:es|ed|ing)?|archiv(?:e|es|ed|ing)|approv(?:e|es|ed|ing)|reject(?:s|ed|ing)?|revok(?:e|es|ed|ing)|submit(?:s|ted|ting)?|enroll(?:s|ed|ing)?|assign(?:s|ed|ing)?|clos(?:e|es|ed|ing)|reopen(?:s|ed|ing)?|upload(?:s|ed|ing)?|import(?:s|ed|ing)?|export(?:s|ed|ing)?|generat(?:e|es|ed|ing)|build|builds|built|mov(?:e|es|ed|ing)|cop(?:y|ies|ied|ying)|renam(?:e|es|ed|ing)|merg(?:e|es|ed|ing)|convert(?:s|ed|ing)?|attach(?:es|ed|ing)?|notif(?:y|ies|ied)|invit(?:e|es|ed|ing)|grant(?:s|ed|ing)?|mark(?:s|ed|ing)?|flag(?:s|ged|ging)?)\b/i;
 
 function tokenize(text: string): Set<string> {
   const words = text.toLowerCase().split(/[^a-z0-9]+/);
   const tokens = new Set<string>();
   for (const word of words) {
-    if (word.length > 1 && !STOPWORDS.has(word)) tokens.add(word);
+    if (word.length > 0) tokens.add(word);
   }
   return tokens;
 }

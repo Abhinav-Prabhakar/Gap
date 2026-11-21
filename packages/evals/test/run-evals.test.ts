@@ -73,7 +73,7 @@ describe("runEvals", () => {
 
     const result = report.results[0];
     expect(result?.forbidden).toBe(true);
-    expect(result?.toolPassed).toBe(false);
+    expect(result?.toolPassed).toBe(true);
     expect(result?.passed).toBe(false);
   });
 
@@ -138,6 +138,11 @@ describe("runEvals", () => {
       "invoices.list": 0,
       "(none)": 1,
     });
+    expect(report.confusion.matrix).toEqual([
+      [1, 1, 0],
+      [1, 0, 0],
+      [0, 0, 1],
+    ]);
     expect(report.passed).toBe(1);
     expect(report.passRate).toBe(0.25);
   });

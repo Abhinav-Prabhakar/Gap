@@ -61,12 +61,11 @@ export async function runEvals(options: RunEvalsOptions): Promise<EvalReport> {
 
     const forbidden =
       choice.tool !== null && (evalCase.forbiddenTools?.includes(choice.tool) ?? false);
-    const toolPassed =
-      error === undefined && choice.tool === evalCase.expectedTool && !forbidden;
+    const toolPassed = error === undefined && choice.tool === evalCase.expectedTool;
     const args = error
       ? { passed: false, missingArgs: [], extraArgs: [] }
       : scoreArgs(evalCase.expectedArgs, choice.args);
-    const passed = error === undefined && toolPassed && args.passed;
+    const passed = error === undefined && toolPassed && args.passed && !forbidden;
 
     results.push({
       index,
@@ -114,7 +113,7 @@ function buildConfusion(cases: readonly EvalCase[], results: readonly EvalResult
     row[column] = (row[column] ?? 0) + 1;
   }
 
-  return { rows, columns, counts };
+  return { rows, columns, counts, matrix: rows.map((row) => columns.map((column) => counts[row]?.[column] ?? 0)) };
 }
 
 function truncate(value: string, limit: number): string {

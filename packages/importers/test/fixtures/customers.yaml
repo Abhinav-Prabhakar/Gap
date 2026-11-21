@@ -1,0 +1,185 @@
+openapi: 3.0.3
+info:
+  title: Customers API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com/v1
+paths:
+  /customers:
+    get:
+      operationId: listCustomers
+      summary: List customers
+      description: Returns a paginated list of customers from the upstream API.
+      tags:
+        - customers
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of customers to return.
+          schema:
+            type: integer
+            minimum: 1
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: A list of customers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Customer'
+    post:
+      operationId: createCustomer
+      summary: Create a customer
+      description: Creates a customer record in the upstream system.
+      x-gap-ui:
+        route: /customers/new
+        action: customers.create
+        fields:
+          name: 'input[name="name"]'
+          email: 'input[name="email"]'
+        submit: 'button[type="submit"]'
+        result: '[data-result]'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInput'
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+  /customers/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Customer identifier.
+        schema:
+          type: string
+    get:
+      operationId: getCustomer
+      summary: Get a customer
+      responses:
+        '200':
+          description: A customer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '404':
+          description: Not found.
+    delete:
+      operationId: deleteCustomer
+      summary: Delete a customer
+      description: Permanently deletes a customer from the upstream API.
+      x-gap-scopes:
+        - customers:write
+      parameters:
+        - name: X-Reason
+          in: header
+          required: true
+          description: Why the customer is being deleted.
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted.
+  /orders/{order-id}/items:
+    get:
+      summary: List order items
+      parameters:
+        - name: order-id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: expand
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Items.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: string
+  /legacy/{id}:
+    get:
+      operationId: getCustomer
+      summary: Legacy customer lookup
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Legacy customer.
+  /ping:
+    get:
+      operationId: ping
+      summary: Ping the API
+      responses:
+        '200':
+          description: Pong.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    description: Whether the API is up.
+components:
+  parameters:
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: Correlation id for the request.
+      schema:
+        type: string
+  schemas:
+    Customer:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: Customer id.
+        name:
+          type: string
+          description: Display name.
+        manager:
+          $ref: '#/components/schemas/Customer'
+    CustomerInput:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+          description: Customer display name.
+        email:
+          type: string
+          description: Contact email.
+        metadata:
+          type: object
+          description: Free-form metadata.
