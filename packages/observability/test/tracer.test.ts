@@ -56,7 +56,7 @@ describe("MemoryTracer", () => {
   });
 
   it("evicts the oldest spans when the buffer is bounded", () => {
-    const tracer = new MemoryTracer({ maxSpans: 2 });
+    const tracer = new MemoryTracer({ max: 2 });
     tracer.startSpan("one").end();
     tracer.startSpan("two").end();
     tracer.startSpan("three").end();

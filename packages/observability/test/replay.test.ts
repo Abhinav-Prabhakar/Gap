@@ -299,7 +299,7 @@ describe("ReplayRecorder replay", () => {
 });
 
 describe("ReplayRecorder serialization", () => {
-  it("round-trips calls and redaction configuration through JSON", () => {
+  it("round-trips recorded calls through JSON", () => {
     const recorder = new ReplayRecorder({ redact: ["card.number"] });
     recorder.record({
       action: "math.add",
@@ -310,6 +310,26 @@ describe("ReplayRecorder serialization", () => {
     });
 
     const restored = ReplayRecorder.fromJSON(recorder.toJSON());
+    expect(restored.entries()).toEqual(recorder.entries());
+    expect(Array.isArray(JSON.parse(recorder.toJSON()))).toBe(true);
+  });
+
+  it("accepts a versioned envelope and restores its redaction config", () => {
+    const recorder = new ReplayRecorder({ redact: ["card.number"] });
+    recorder.record({
+      action: "math.add",
+      args: { a: 1, b: 2, card: { number: "4242" } },
+      principalId: "user_1",
+      durationMs: 4,
+    });
+
+    const restored = ReplayRecorder.fromJSON(
+      JSON.stringify({
+        version: 1,
+        redact: ["card.number"],
+        calls: recorder.entries(),
+      }),
+    );
     expect(restored.entries()).toEqual(recorder.entries());
 
     const added = restored.record({

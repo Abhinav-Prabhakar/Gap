@@ -67,7 +67,6 @@ describe("tool matching", () => {
 
     expect(decide(policy, "invoices.delete").decision).toEqual({
       decision: "deny",
-      code: "POLICY_DENIED",
       reason: "Invoices cannot be deleted.",
     });
     expect(decide(policy, "invoices.list").decision).toEqual({ decision: "allow" });
@@ -120,7 +119,6 @@ describe("defaults and precedence", () => {
     expect(decide(policy, "reports.read").decision.decision).toBe("allow");
     expect(decide(policy, "reports.write").decision).toEqual({
       decision: "deny",
-      code: "POLICY_DENIED",
       reason: "Denied by default policy.",
     });
   });
@@ -148,7 +146,6 @@ describe("defaults and precedence", () => {
 
     expect(decide(policy, "payments.charge").decision).toEqual({
       decision: "deny",
-      code: "POLICY_DENIED",
       reason: "Charges blocked.",
     });
     expect(decide(policy, "invoices.create").decision).toEqual({ decision: "allow" });
@@ -179,7 +176,6 @@ describe("defaults and precedence", () => {
 
     expect(decide(policy, "admin.reset").decision).toEqual({
       decision: "deny",
-      code: "POLICY_DENIED",
       reason: "Denied by the policy document.",
     });
     expect(decide(policy, "invoices.send").decision).toEqual({

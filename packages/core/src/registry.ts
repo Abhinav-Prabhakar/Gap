@@ -80,6 +80,12 @@ export class ActionRegistry {
     return this.#actions.delete(name);
   }
 
+  /** Remove every action. Used by gateways that refresh an upstream catalog. */
+  clear(): this {
+    this.#actions.clear();
+    return this;
+  }
+
   get(name: string): AnyAction | undefined {
     return this.#actions.get(name);
   }

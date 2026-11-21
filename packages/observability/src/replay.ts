@@ -63,12 +63,6 @@ export interface ReplayOptions {
   dryRun?: boolean;
 }
 
-interface ReplayFile {
-  version: 1;
-  redact: string[];
-  calls: RecordedCall[];
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -285,14 +279,9 @@ export class ReplayRecorder {
     return cloneValue(this.#calls);
   }
 
-  /** Serialize the recorder, including its redaction configuration. */
+  /** Serialize the recorded calls as a JSON array. */
   toJSON(): string {
-    const file: ReplayFile = {
-      version: 1,
-      redact: [...this.#redactPaths],
-      calls: this.#calls,
-    };
-    return JSON.stringify(file);
+    return JSON.stringify(this.#calls);
   }
 
   /**

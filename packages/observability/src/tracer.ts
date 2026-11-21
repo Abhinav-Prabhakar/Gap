@@ -43,6 +43,8 @@ export interface MemoryTracerOptions {
    * is evicted. Defaults to 1000.
    */
   maxSpans?: number;
+  /** Alias for {@link MemoryTracerOptions.maxSpans}. */
+  max?: number;
   /** Clock returning epoch milliseconds. Injectable for deterministic tests. */
   now?: () => number;
 }
@@ -164,15 +166,16 @@ export class MemoryTracer implements Tracer {
   readonly #now: () => number;
 
   /** Create a tracer retaining at most `maxSpans` finished or active spans. */
-  constructor(options: MemoryTracerOptions = {}) {
-    const maxSpans = options.maxSpans ?? 1000;
+  constructor(options: MemoryTracerOptions | number = {}) {
+    const config = typeof options === "number" ? { maxSpans: options } : options;
+    const maxSpans = config.maxSpans ?? config.max ?? 1000;
     if (!Number.isInteger(maxSpans) || maxSpans <= 0) {
       throw invalidInput("maxSpans must be a positive integer.", {
         maxSpans,
       });
     }
     this.#maxSpans = maxSpans;
-    this.#now = options.now ?? Date.now;
+    this.#now = config.now ?? Date.now;
   }
 
   /** Start and capture a span. The returned handle updates this record. */
@@ -374,17 +377,28 @@ export function otelTracer(tracer: OtelTracer): Tracer {
       });
       return {
         setAttribute(key, value): void {
-          otelSpan.setAttribute(key, value);
+          if (typeof otelSpan.setAttribute === "function") {
+            otelSpan.setAttribute(key, value);
+          }
         },
         setAttributes(next): void {
-          otelSpan.setAttributes(toOtelAttributes(next));
+          if (typeof otelSpan.setAttributes === "function") {
+            otelSpan.setAttributes(toOtelAttributes(next));
+          }
         },
         recordException(error): void {
-          const exception = toOtelException(error);
-          otelSpan.recordException(exception);
+          const exception: Exception =
+            error instanceof Error ? error : toOtelException(error);
+          if (typeof otelSpan.recordException === "function") {
+            otelSpan.recordException(exception);
+          }
           if (typeof otelSpan.setStatus === "function") {
             const message =
-              typeof exception === "string" ? exception : exception.message;
+              exception instanceof Error
+                ? exception.message
+                : typeof exception === "string"
+                  ? exception
+                  : exception.message;
             otelSpan.setStatus({
               code: OTEL_ERROR,
               ...(message === undefined ? {} : { message }),
@@ -392,7 +406,7 @@ export function otelTracer(tracer: OtelTracer): Tracer {
           }
         },
         end(): void {
-          otelSpan.end();
+          if (typeof otelSpan.end === "function") otelSpan.end();
         },
       };
     },

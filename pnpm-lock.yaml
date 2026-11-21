@@ -30,6 +30,28 @@ importers:
         specifier: ^5.1.1
         version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(happy-dom@21.0.4)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
 
+  examples/demo:
+    dependencies:
+      gapmcp-auth:
+        specifier: workspace:^
+        version: link:../../packages/auth
+      gapmcp-core:
+        specifier: workspace:^
+        version: link:../../packages/core
+      gapmcp-policy:
+        specifier: workspace:^
+        version: link:../../packages/policy
+      gapmcp-server:
+        specifier: workspace:^
+        version: link:../../packages/server
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      tsx:
+        specifier: ^4.20.6
+        version: 4.23.15
+
   packages/auth:
     dependencies:
       gapmcp-core:

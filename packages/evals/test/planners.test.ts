@@ -75,6 +75,11 @@ describe("MockPlanner", () => {
     expect(planner.remaining).toBe(Number.POSITIVE_INFINITY);
     expect(planner.calls).toHaveLength(1);
   });
+
+  it("accepts readonly response arrays", async () => {
+    const planner = new MockPlanner([{ tool: "invoices.list" }] as const);
+    await expect(planner.choose(input)).resolves.toEqual({ tool: "invoices.list" });
+  });
 });
 
 describe("httpPlanner", () => {

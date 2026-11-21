@@ -14,6 +14,7 @@ import {
   riskForMethod,
   signalFrom,
   upstreamError,
+  type ImportedHttpMethod,
 } from "./http.js";
 
 /** The Next.js App Router HTTP method exports this scanner understands. */
@@ -49,13 +50,6 @@ const IGNORED_DIRECTORIES = new Set([
   ".turbo",
   "dist",
 ]);
-
-interface RouteFile {
-  absolute: string;
-  /** POSIX-style path relative to the project root, used in descriptions. */
-  label: string;
-  routePath: string;
-}
 
 /**
  * Remove `//` and `/* *\/` comments while preserving string literals and line
@@ -211,6 +205,15 @@ function pathParameterNames(routePath: string): string[] {
   return names;
 }
 
+function requiredPathParameterNames(routePath: string): string[] {
+  const names: string[] = [];
+  for (const match of routePath.matchAll(/:([A-Za-z0-9_]+)(\?)?/g)) {
+    const name = match[1];
+    if (name && !match[2] && !names.includes(name)) names.push(name);
+  }
+  return names;
+}
+
 function nextInputSchema(
   routePath: string,
   method: NextRouteMethod,
@@ -241,7 +244,7 @@ function nextInputSchema(
     properties,
     additionalProperties: true,
   };
-  const required = pathParameterNames(routePath);
+  const required = requiredPathParameterNames(routePath);
   if (required.length > 0) schema.required = required;
   return schema;
 }
@@ -480,8 +483,7 @@ export async function scanNextRoutes(
 
       const description = `Handle ${method} ${routePath} requests from ${label}. Imported from a Next.js App Router route handler.`;
       const risk = riskForMethod(
-        method.toLowerCase() as
-          "get" | "post" | "put" | "patch" | "delete" | "head" | "options",
+        method.toLowerCase() as ImportedHttpMethod,
       );
       const execute =
         options.baseUrl !== undefined && options.baseUrl.length > 0
