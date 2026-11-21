@@ -1,0 +1,52 @@
+{
+  "name": "gapmcp-cli",
+  "version": "0.1.0",
+  "description": "The gap CLI: init, import, lint, evals, inspect, serve and doctor.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Abhinav-Prabhakar/Gap.git"
+  },
+  "homepage": "https://github.com/Abhinav-Prabhakar/Gap#readme",
+  "bugs": {
+    "url": "https://github.com/Abhinav-Prabhakar/Gap/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean --sourcemap --banner.js \"#!/usr/bin/env node\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "gapmcp-core": "workspace:^",
+    "gapmcp-server": "workspace:^",
+    "gapmcp-auth": "workspace:^",
+    "gapmcp-policy": "workspace:^",
+    "gapmcp-observability": "workspace:^",
+    "gapmcp-evals": "workspace:^",
+    "gapmcp-importers": "workspace:^",
+    "gapmcp-dom": "workspace:^",
+    "commander": "^15.1.0",
+    "picocolors": "^1.1.1",
+    "jiti": "^2.6.1"
+  },
+  "bin": {
+    "gap": "./dist/index.js"
+  }
+}
