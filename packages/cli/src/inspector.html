@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gap Inspector</title>
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --panel: #101419;
+    --panel-2: #151b22;
+    --line: #222b35;
+    --line-soft: #1a222b;
+    --text: #e6edf3;
+    --muted: #8b98a5;
+    --faint: #5c6773;
+    --accent: #c8f169;
+    --accent-dim: #96b84a;
+    --danger: #ff7b72;
+    --warn: #e3b341;
+    --info: #79c0ff;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); }
+  body { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+  a { color: inherit; }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  ::selection { background: rgba(200, 241, 105, .25); }
+
+  aside { border-right: 1px solid var(--line); padding: 22px 16px; display: flex; flex-direction: column; gap: 26px; position: sticky; top: 0; height: 100vh; background: linear-gradient(180deg, #0b0e12, #090b0e); }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+  .mark { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: #0a0c0f; display: grid; place-items: center; font-weight: 800; font-size: 15px; letter-spacing: -1px; }
+  .brand h1 { font-size: 15px; margin: 0; letter-spacing: -.01em; }
+  .brand span { display: block; color: var(--faint); font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .12em; margin-top: 2px; }
+  nav { display: grid; gap: 4px; }
+  nav button { background: transparent; border: 0; text-align: left; padding: 9px 10px; border-radius: 7px; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 9px; font-size: 13px; }
+  nav button:hover { background: var(--panel); color: var(--text); }
+  nav button.active { background: var(--panel-2); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
+  nav button .ico { width: 16px; text-align: center; opacity: .8; font-family: var(--mono); }
+  .side-foot { margin-top: auto; display: grid; gap: 10px; padding: 0 8px; }
+  .status { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .dot { width: 6px; height: 6px; border-radius: 99px; background: var(--accent); box-shadow: 0 0 0 3px rgba(200,241,105,.12); }
+  .side-foot small { color: var(--faint); font-size: 10px; line-height: 1.5; }
+
+  main { padding: 28px 34px 60px; max-width: 1400px; width: 100%; }
+  header.page { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 22px; gap: 16px; }
+  header.page h2 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+  header.page p { margin: 6px 0 0; color: var(--muted); font-size: 13px; max-width: 720px; line-height: 1.55; }
+  .pill { border: 1px solid var(--line); background: var(--panel); border-radius: 99px; padding: 4px 9px; font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
+  .pill.good { color: var(--accent); border-color: rgba(200,241,105,.24); background: rgba(200,241,105,.06); }
+  .pill.warn { color: var(--warn); border-color: rgba(227,179,65,.24); background: rgba(227,179,65,.06); }
+  .pill.bad { color: var(--danger); border-color: rgba(255,123,114,.24); background: rgba(255,123,114,.06); }
+  .pill.info { color: var(--info); border-color: rgba(121,192,255,.24); background: rgba(121,192,255,.06); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+  .stat { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 14px 15px; }
+  .stat label { display: block; color: var(--faint); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; font-family: var(--mono); margin-bottom: 9px; }
+  .stat strong { font-size: 23px; font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .stat small { color: var(--muted); font-size: 11px; margin-left: 6px; }
+
+  .panel { border: 1px solid var(--line); background: var(--panel); border-radius: 12px; overflow: hidden; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; border-bottom: 1px solid var(--line-soft); }
+  .panel-head h3 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: -.01em; }
+  .panel-head .sub { color: var(--faint); font-size: 11px; font-family: var(--mono); }
+  .toolbar { display: flex; gap: 8px; align-items: center; }
+  input.search { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; font-size: 12px; width: 220px; outline: none; }
+  input.search:focus { border-color: #39424e; }
+  select { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 7px 9px; font-size: 12px; outline: none; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; color: var(--faint); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; padding: 10px 16px; border-bottom: 1px solid var(--line-soft); font-family: var(--mono); }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: rgba(255,255,255,.015); }
+  .tool-name { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  .tool-desc { color: var(--muted); font-size: 11.5px; line-height: 1.5; max-width: 640px; margin-top: 4px; }
+  .chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 7px; }
+  .chip { font-family: var(--mono); font-size: 9.5px; color: var(--faint); border: 1px solid var(--line); border-radius: 4px; padding: 2px 5px; }
+  .empty { padding: 40px 16px; text-align: center; color: var(--faint); font-size: 12.5px; }
+
+  .play { display: grid; grid-template-columns: 1.05fr .95fr; gap: 14px; }
+  .stack { display: grid; gap: 12px; }
+  .field label { display: block; color: var(--faint); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; font-family: var(--mono); margin-bottom: 6px; }
+  textarea { width: 100%; min-height: 170px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; font-family: var(--mono); font-size: 12px; line-height: 1.55; resize: vertical; outline: none; }
+  textarea:focus { border-color: #39424e; }
+  .actions { display: flex; gap: 8px; align-items: center; }
+  .btn { background: var(--accent); color: #0b0e12; border: 0; border-radius: 7px; padding: 8px 13px; font-size: 12px; font-weight: 650; cursor: pointer; }
+  .btn:hover { background: #d4f586; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--muted); font-weight: 500; }
+  .btn.ghost:hover { color: var(--text); border-color: #39424e; }
+  .btn.danger { background: transparent; border: 1px solid rgba(255,123,114,.35); color: var(--danger); }
+  pre { margin: 0; padding: 13px; background: var(--bg); border: 1px solid var(--line-soft); border-radius: 8px; font-family: var(--mono); font-size: 11.5px; line-height: 1.55; overflow: auto; max-height: 420px; white-space: pre-wrap; word-break: break-word; }
+  .result-ok { color: var(--accent); }
+  .result-bad { color: var(--danger); }
+  .muted { color: var(--muted); }
+  .mono { font-family: var(--mono); }
+
+  .call { border-bottom: 1px solid var(--line-soft); }
+  .call summary { list-style: none; cursor: pointer; padding: 11px 16px; display: grid; grid-template-columns: 20px 1fr auto auto; gap: 10px; align-items: center; }
+  .call summary::-webkit-details-marker { display: none; }
+  .call[open] summary { background: var(--panel-2); }
+  .call .chev { color: var(--faint); transition: transform .15s ease; font-size: 10px; }
+  .call[open] .chev { transform: rotate(90deg); }
+  .call .meta { color: var(--faint); font-size: 10.5px; font-family: var(--mono); }
+  .call pre { margin: 0 16px 14px; }
+
+  .approval { padding: 15px 16px; border-bottom: 1px solid var(--line-soft); display: grid; gap: 10px; }
+  .approval:last-child { border-bottom: 0; }
+  .approval .top { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+  .approval .when { color: var(--faint); font-size: 10.5px; font-family: var(--mono); }
+  .approval pre { max-height: 160px; }
+
+  .toast { position: fixed; right: 22px; bottom: 22px; background: var(--panel-2); border: 1px solid var(--line); border-left: 2px solid var(--accent); padding: 11px 14px; border-radius: 8px; font-size: 12px; color: var(--text); opacity: 0; transform: translateY(8px); transition: .2s ease; pointer-events: none; max-width: 420px; }
+  .toast.show { opacity: 1; transform: none; }
+  .hidden { display: none !important; }
+  .issues { display: grid; gap: 6px; padding: 12px 16px; border-top: 1px solid var(--line-soft); background: rgba(227,179,65,.03); }
+  .issue { font-size: 11.5px; color: var(--muted); display: flex; gap: 8px; }
+  .issue b { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; }
+  .issue.warn b { color: var(--warn); }
+  .issue.error b { color: var(--danger); }
+
+  @media (max-width: 980px) {
+    body { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; flex-direction: row; align-items: center; padding: 12px 14px; gap: 16px; overflow-x: auto; }
+    nav { grid-auto-flow: column; }
+    .side-foot { display: none; }
+    main { padding: 20px 16px 50px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .play { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<aside>
+  <div class="brand">
+    <div class="mark">G</div>
+    <div><h1>Gap</h1><span>Inspector</span></div>
+  </div>
+  <nav id="nav">
+    <button data-tab="overview" class="active"><span class="ico">◫</span>Overview</button>
+    <button data-tab="tools"><span class="ico">⌘</span>Tools</button>
+    <button data-tab="playground"><span class="ico">▷</span>Playground</button>
+    <button data-tab="calls"><span class="ico">≋</span>Calls</button>
+    <button data-tab="approvals"><span class="ico">◉</span>Approvals</button>
+  </nav>
+  <div class="side-foot">
+    <div class="status"><span class="dot"></span><span id="status">connected</span></div>
+    <small>Local development surface. Actions run in your process with your policy.</small>
+  </div>
+</aside>
+
+<main>
+  <section id="tab-overview">
+    <header class="page">
+      <div>
+        <h2>Action surface</h2>
+        <p>Everything an agent can discover and execute, with the policy and identity rail around it. Tools are filtered by scope at request time; this view shows the full registry.</p>
+      </div>
+      <span class="pill" id="endpoint-pill">/mcp</span>
+    </header>
+    <div class="stats">
+      <div class="stat"><label>Tools</label><strong id="stat-tools">0</strong></div>
+      <div class="stat"><label>Calls</label><strong id="stat-calls">0</strong><small>recent</small></div>
+      <div class="stat"><label>Pending approvals</label><strong id="stat-approvals">0</strong></div>
+      <div class="stat"><label>Registry issues</label><strong id="stat-issues">0</strong></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Namespaces</h3><span class="sub" id="namespace-count">0</span></div>
+      <div id="namespaces" class="empty">Loading…</div>
+    </div>
+  </section>
+
+  <section id="tab-tools" class="hidden">
+    <header class="page">
+      <div><h2>Tools</h2><p>Each row is a typed action. Descriptions are model-facing, not documentation: they decide whether an agent picks the right tool.</p></div>
+      <div class="toolbar"><input class="search" id="tool-search" placeholder="Filter tools…" /></div>
+    </header>
+    <div class="panel">
+      <div class="panel-head"><h3>Registry</h3><span class="sub" id="tools-count">0 tools</span></div>
+      <table>
+        <thead><tr><th>Tool</th><th>Risk</th><th>Scopes</th><th>Flags</th></tr></thead>
+        <tbody id="tools-body"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
+      </table>
+      <div id="tool-issues"></div>
+    </div>
+  </section>
+
+  <section id="tab-playground" class="hidden">
+    <header class="page">
+      <div><h2>Playground</h2><p>Call a tool through the real MCP endpoint. Arguments are validated, policy is applied, and the call is audited — same path an agent takes.</p></div>
+    </header>
+    <div class="play">
+      <div class="panel">
+        <div class="panel-head"><h3>Request</h3><span class="sub">JSON-RPC</span></div>
+        <div class="stack" style="padding:14px">
+          <div class="field"><label>Tool</label><select id="play-tool" style="width:100%"></select></div>
+          <div class="field"><label>Arguments</label><textarea id="play-args" spellcheck="false">{}</textarea></div>
+          <div class="actions">
+            <button class="btn" id="play-run">Run tool</button>
+            <button class="btn ghost" id="play-format">Format JSON</button>
+            <span class="mono muted" id="play-meta" style="font-size:10.5px"></span>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Result</h3><span class="sub" id="play-status">idle</span></div>
+        <div style="padding:14px"><pre id="play-result">Run a tool to see its structured result, receipt and timing.</pre></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-calls" class="hidden">
+    <header class="page">
+      <div><h2>Calls</h2><p>The in-process call log: principal, decision, duration and receipt. This is the same stream your audit sink receives.</p></div>
+      <button class="btn ghost" id="calls-clear">Clear</button>
+    </header>
+    <div class="panel" id="calls-panel"><div class="empty">No calls yet.</div></div>
+  </section>
+
+  <section id="tab-approvals" class="hidden">
+    <header class="page">
+      <div><h2>Approvals</h2><p>High-risk actions park here. Approving binds the grant to the exact arguments; a mutated retry is rejected.</p></div>
+      <span class="pill" id="approval-pill">0 pending</span>
+    </header>
+    <div class="panel" id="approvals-panel"><div class="empty">No approvals configured.</div></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const state = { tools: [], calls: [], approvals: [], meta: null, active: "overview" };
+  const $ = (id) => document.getElementById(id);
+  const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const riskClass = (risk) => risk === "critical" || risk === "high" ? "bad" : risk === "medium" ? "warn" : "good";
+  const toast = (message) => {
+    const el = $("toast"); el.textContent = message; el.classList.add("show");
+    clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove("show"), 2600);
+  };
+
+  async function get(path) {
+    const response = await fetch(path);
+    if (!response.ok) throw new Error((await response.text()).slice(0, 300));
+    return response.json();
+  }
+
+  function setTab(tab) {
+    state.active = tab;
+    document.querySelectorAll("nav button").forEach((button) => button.classList.toggle("active", button.dataset.tab === tab));
+    ["overview", "tools", "playground", "calls", "approvals"].forEach((name) => {
+      $("tab-" + name).classList.toggle("hidden", name !== tab);
+    });
+  }
+  document.getElementById("nav").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-tab]");
+    if (button) setTab(button.dataset.tab);
+  });
+
+  function renderOverview() {
+    $("stat-tools").textContent = state.tools.length;
+    $("stat-calls").textContent = state.calls.length;
+    $("stat-approvals").textContent = state.approvals.filter((item) => item.status === "pending").length;
+    $("stat-issues").textContent = state.tools.reduce((total, tool) => total + (tool.issues?.length || 0), 0);
+    const groups = {};
+    for (const tool of state.tools) {
+      const ns = tool.name.split(".")[0];
+      (groups[ns] ||= []).push(tool);
+    }
+    $("namespace-count").textContent = Object.keys(groups).length + " groups";
+    $("namespaces").className = "issues";
+    $("namespaces").innerHTML = Object.entries(groups).map(([ns, tools]) => `
+      <div class="issue" style="padding:7px 0;border-bottom:1px solid var(--line-soft)">
+        <b style="color:var(--accent);min-width:100px">${esc(ns)}</b>
+        <span class="muted" style="flex:1">${tools.length} tool${tools.length === 1 ? "" : "s"}</span>
+        <span class="mono" style="color:var(--faint);font-size:10px">${tools.map((t) => t.name.split(".").slice(1).join(".")).join(" · ")}</span>
+      </div>`).join("") || '<div class="empty">No tools registered.</div>';
+  }
+
+  function renderTools() {
+    const query = ($("tool-search").value || "").toLowerCase();
+    const tools = state.tools.filter((tool) => (tool.name + " " + tool.description).toLowerCase().includes(query));
+    $("tools-count").textContent = tools.length + " tools";
+    $("tools-body").innerHTML = tools.map((tool) => {
+      const action = tool.action || {};
+      const flags = [
+        action.task ? "task" : null,
+        action.hasUndo ? "undoable" : null,
+        action.confirm ? "confirm" : null,
+        action.deprecated ? "deprecated" : null,
+        action.idempotent ? "idempotent" : null,
+      ].filter(Boolean);
+      return `<tr>
+        <td>
+          <div class="tool-name">${esc(tool.name)} <span class="muted" style="font-size:9px">v${esc(action.version || 1)}</span></div>
+          <div class="tool-desc">${esc(tool.description)}</div>
+          <div class="chips">${(action.tags || []).map((tag) => `<span class="chip">#${esc(tag)}</span>`).join("")}</div>
+        </td>
+        <td><span class="pill ${riskClass(action.risk)}">${esc(action.risk || "low")}</span></td>
+        <td>${(action.scopes || []).length ? action.scopes.map((scope) => `<span class="chip">${esc(scope)}</span>`).join(" ") : '<span class="muted" style="font-size:11px">none</span>'}</td>
+        <td>${flags.length ? flags.map((flag) => `<span class="chip">${esc(flag)}</span>`).join(" ") : '<span class="muted" style="font-size:11px">—</span>'}</td>
+      </tr>`;
+    }).join("") || '<tr><td colspan="4" class="empty">No tools match.</td></tr>';
+
+    const issues = state.tools.flatMap((tool) => (tool.issues || []).map((issue) => ({ ...issue, tool: tool.name })));
+    $("tool-issues").innerHTML = issues.length ? `<div class="issues">${issues.map((issue) => `
+      <div class="issue ${issue.level}"><b>${esc(issue.level)}</b><span><span class="mono">${esc(issue.tool)}</span> — ${esc(issue.message)}</span></div>`).join("")}</div>` : "";
+  }
+
+  function renderPlaygroundOptions() {
+    const select = $("play-tool");
+    const previous = select.value;
+    select.innerHTML = state.tools.map((tool) => `<option value="${esc(tool.name)}">${esc(tool.name)}</option>`).join("");
+    if (previous && state.tools.some((tool) => tool.name === previous)) select.value = previous;
+    applyExample();
+  }
+
+  function applyExample() {
+    const tool = state.tools.find((item) => item.name === $("play-tool").value);
+    if (!tool) return;
+    const schema = tool.inputSchema || {};
+    const properties = schema.properties || {};
+    const example = {};
+    for (const [key, value] of Object.entries(properties)) {
+      if (value.default !== undefined) example[key] = value.default;
+      else if (value.examples && value.examples.length) example[key] = value.examples[0];
+      else if (value.type === "string") example[key] = value.enum ? value.enum[0] : "";
+      else if (value.type === "number" || value.type === "integer") example[key] = 0;
+      else if (value.type === "boolean") example[key] = false;
+      else if (value.type === "array") example[key] = [];
+      else if (value.type === "object") example[key] = {};
+    }
+    $("play-args").value = JSON.stringify(example, null, 2);
+    $("play-meta").textContent = (tool.action?.risk || "low") + " risk";
+  }
+
+  async function runPlayground() {
+    const button = $("play-run");
+    button.disabled = true;
+    $("play-status").textContent = "running";
+    $("play-result").textContent = "…";
+    const started = performance.now();
+    try {
+      const response = await fetch("/api/call", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: $("play-tool").value, argsText: $("play-args").value }),
+      });
+      const result = await response.json();
+      const ms = result.durationMs ?? Math.round(performance.now() - started);
+      $("play-status").innerHTML = result.isError
+        ? '<span class="result-bad">error</span> · ' + ms + "ms"
+        : '<span class="result-ok">ok</span> · ' + ms + "ms";
+      $("play-result").textContent = result.structured
+        ? JSON.stringify(result.structured, null, 2)
+        : (result.text || "(empty result)");
+      if (result.isError) toast(result.text || "Tool call failed");
+      refreshCalls();
+    } catch (error) {
+      $("play-status").innerHTML = '<span class="result-bad">failed</span>';
+      $("play-result").textContent = String(error);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function renderCalls() {
+    const panel = $("calls-panel");
+    if (!state.calls.length) {
+      panel.innerHTML = '<div class="empty">No calls yet. Run a tool from the playground.</div>';
+      return;
+    }
+    panel.innerHTML = state.calls.map((call, index) => {
+      const status = call.error ? "bad" : call.decision === "approval_required" ? "warn" : "good";
+      return `<details class="call" ${index === 0 ? "open" : ""}>
+        <summary>
+          <span class="chev">▶</span>
+          <span><span class="tool-name">${esc(call.action || call.tool || "unknown")}</span>
+            <span class="meta" style="margin-left:8px">${esc(call.principalId || call.principal || "")}</span></span>
+          <span class="pill ${status}">${esc(call.error ? "error" : call.decision || "allowed")}</span>
+          <span class="meta">${esc(call.durationMs != null ? call.durationMs + "ms" : "")} ${esc(call.timestamp || "")}</span>
+        </summary>
+        <pre>${esc(JSON.stringify(call.args ?? call.input ?? {}, null, 2))}</pre>
+        <pre>${esc(JSON.stringify(call.result ?? call.error ?? call.metadata ?? {}, null, 2))}</pre>
+      </details>`;
+    }).join("");
+  }
+
+  function renderApprovals() {
+    const panel = $("approvals-panel");
+    const approvals = state.approvals;
+    const pending = approvals.filter((item) => item.status === "pending");
+    $("approval-pill").textContent = pending.length + " pending";
+    $("stat-approvals").textContent = pending.length;
+    if (!approvals.length) {
+      panel.innerHTML = '<div class="empty">No approvals configured, or nothing is waiting.</div>';
+      return;
+    }
+    panel.innerHTML = approvals.map((item) => `
+      <div class="approval">
+        <div class="top">
+          <div class="row"><span class="tool-name">${esc(item.action)}</span>
+            <span class="pill ${item.status === "pending" ? "warn" : item.status === "approved" ? "good" : "bad"}">${esc(item.status)}</span></div>
+          <span class="when">${esc(item.createdAt || item.requestedAt || "")}</span>
+        </div>
+        <div class="meta mono" style="color:var(--faint);font-size:10.5px">${esc(item.principalId || "")} · ${esc(item.id)}</div>
+        <pre>${esc(JSON.stringify(item.argsPreview ?? item.args ?? {}, null, 2))}</pre>
+        ${item.status === "pending" ? `<div class="actions">
+          <button class="btn" data-approve="${esc(item.id)}">Approve</button>
+          <button class="btn danger" data-deny="${esc(item.id)}">Deny</button>
+        </div>` : ""}
+      </div>`).join("");
+  }
+
+  async function decide(id, action) {
+    try {
+      const response = await fetch("/api/approvals/" + encodeURIComponent(id) + "/" + action, { method: "POST" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Failed");
+      toast(action === "approve" ? "Approved. The agent can retry the call." : "Denied.");
+      await refreshApprovals();
+    } catch (error) { toast(String(error)); }
+  }
+  $("approvals-panel").addEventListener("click", (event) => {
+    const approve = event.target.closest("[data-approve]");
+    const deny = event.target.closest("[data-deny]");
+    if (approve) decide(approve.dataset.approve, "approve");
+    if (deny) decide(deny.dataset.deny, "deny");
+  });
+
+  async function refreshTools() {
+    const data = await get("/api/tools");
+    state.tools = data.tools || [];
+    renderOverview(); renderTools(); renderPlaygroundOptions();
+  }
+  async function refreshCalls() {
+    const data = await get("/api/calls");
+    state.calls = (data.calls || []).slice().reverse();
+    $("stat-calls").textContent = state.calls.length;
+    renderCalls();
+  }
+  async function refreshApprovals() {
+    const data = await get("/api/approvals");
+    state.approvals = data.approvals || [];
+    renderApprovals();
+  }
+  async function refreshAll() {
+    try {
+      const [meta] = await Promise.all([get("/api/meta"), refreshTools(), refreshCalls(), refreshApprovals()]);
+      state.meta = meta;
+      $("status").textContent = "connected · " + meta.tools + " tools";
+    } catch (error) {
+      $("status").textContent = "disconnected";
+      toast(String(error));
+    }
+  }
+
+  $("tool-search").addEventListener("input", renderTools);
+  $("play-tool").addEventListener("change", applyExample);
+  $("play-run").addEventListener("click", runPlayground);
+  $("play-format").addEventListener("click", () => {
+    try { $("play-args").value = JSON.stringify(JSON.parse($("play-args").value), null, 2); }
+    catch (error) { toast("Invalid JSON: " + error.message); }
+  });
+  $("calls-clear").addEventListener("click", async () => {
+    await fetch("/api/calls/clear", { method: "POST" });
+    refreshCalls(); toast("Call log cleared");
+  });
+
+  refreshAll();
+  setInterval(() => { refreshCalls(); refreshApprovals(); }, 2500);
+})();
+</script>
+</body>
+</html>

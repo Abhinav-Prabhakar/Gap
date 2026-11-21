@@ -30,7 +30,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --sourcemap --banner.js \"#!/usr/bin/env node\"",
+    "build": "tsup src/index.ts --format esm --dts --clean --sourcemap --banner.js \"#!/usr/bin/env node\" && node -e \"require('node:fs').copyFileSync('src/inspector.html','dist/inspector.html')\"",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

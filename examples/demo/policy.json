@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "default": "allow",
+  "rules": [
+    {
+      "tools": ["invoices.create"],
+      "maxAmount": 10000,
+      "amountPaths": ["unitPrice"],
+      "maxArrayLength": 20,
+      "arrayPaths": ["lineItems"],
+      "reason": "Demo policy caps invoice lines and unit price."
+    },
+    {
+      "tools": ["invoices.send"],
+      "confirm": true,
+      "reason": "Sending email is externally visible."
+    },
+    {
+      "tools": ["reports.*"],
+      "redact": ["csv"]
+    }
+  ]
+}
