@@ -50,6 +50,7 @@ export class MockPlanner implements Planner {
     return this.#calls;
   }
 
+  /** Replay the next fixed response, or invoke the function handler. */
   async choose(input: PlannerInput): Promise<ToolChoice> {
     this.#calls.push(input);
 
@@ -60,8 +61,8 @@ export class MockPlanner implements Planner {
     const responses = this.#responses ?? [];
     if (this.#cursor >= responses.length) {
       throw new GapError(
-        `MockPlanner ran out of responses after ${responses.length} call(s). ` +
-          "Add more responses or construct it with a function.",
+        `MockPlanner ran out of responses: ${responses.length} configured, ` +
+          `${this.#calls.length} requested. Add more responses or construct it with a function.`,
         { code: "INTERNAL" },
       );
     }
@@ -80,10 +81,13 @@ export class MockPlanner implements Planner {
  * route. Trailing slashes are ignored.
  */
 export function normalizeChatCompletionsEndpoint(endpoint: string): string {
-  const trimmed = endpoint.trim().replace(/\/+$/, "");
-  return trimmed.endsWith(CHAT_COMPLETIONS_SUFFIX)
-    ? trimmed
-    : `${trimmed}${CHAT_COMPLETIONS_SUFFIX}`;
+  const trimmed = endpoint.trim();
+  const queryIndex = trimmed.search(/[?#]/);
+  const path = (queryIndex === -1 ? trimmed : trimmed.slice(0, queryIndex)).replace(/\/+$/, "");
+  const tail = queryIndex === -1 ? "" : trimmed.slice(queryIndex);
+  return path.endsWith(CHAT_COMPLETIONS_SUFFIX)
+    ? `${path}${tail}`
+    : `${path}${CHAT_COMPLETIONS_SUFFIX}${tail}`;
 }
 
 function toFunctionTool(tool: ToolDescriptor): Record<string, unknown> {

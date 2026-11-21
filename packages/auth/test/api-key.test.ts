@@ -48,9 +48,7 @@ describe("apiKeyAuth", () => {
       keys: [{ key: KEY, principal: { id: "plain_user" } }],
     });
 
-    const result = await provider.authenticate(
-      request({ "x-api-key": KEY }),
-    );
+    const result = await provider.authenticate(request({ "x-api-key": KEY }));
 
     expect(result?.principal).toEqual({ id: "plain_user" });
     expect(result?.scopes).toBeUndefined();
@@ -98,7 +96,8 @@ describe("apiKeyAuth", () => {
       await provider.authenticate(request({ authorization: `Bearer ${KEY}` })),
     ).toBeNull();
     expect(
-      (await provider.authenticate(request({ "x-api-key": KEY })))?.principal.id,
+      (await provider.authenticate(request({ "x-api-key": KEY })))?.principal
+        .id,
     ).toBe("user_1");
 
     const authorizationOnly = apiKeyAuth({
@@ -122,9 +121,7 @@ describe("apiKeyAuth", () => {
     );
     const provider = apiKeyAuth({ keys: resolver });
 
-    const result = await provider.authenticate(
-      request({ "x-api-key": KEY }),
-    );
+    const result = await provider.authenticate(request({ "x-api-key": KEY }));
     expect(result?.principal.id).toBe("resolved_user");
     expect(result?.scopes).toEqual(["resolved.read"]);
     expect(resolver).toHaveBeenCalledTimes(1);
@@ -136,9 +133,11 @@ describe("apiKeyAuth", () => {
           : undefined,
     });
     expect(
-      (await asyncProvider.authenticate(
-        request({ authorization: `Bearer ${KEY}` }),
-      ))?.principal.id,
+      (
+        await asyncProvider.authenticate(
+          request({ authorization: `Bearer ${KEY}` }),
+        )
+      )?.principal.id,
     ).toBe("async_user");
   });
 

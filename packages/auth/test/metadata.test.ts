@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  bearerChallenge,
-  protectedResourceMetadata,
-} from "../src/index";
+import { bearerChallenge, protectedResourceMetadata } from "../src/index";
 
 describe("protectedResourceMetadata", () => {
   it("builds an RFC 9728 document", () => {
@@ -28,9 +25,7 @@ describe("protectedResourceMetadata", () => {
     });
     expect(minimal.scopes_supported).toEqual([]);
     expect(minimal.bearer_methods_supported).toEqual(["header"]);
-    expect(minimal.resource_documentation).toBe(
-      "https://api.example.test/mcp",
-    );
+    expect(minimal.resource_documentation).toBe("https://api.example.test/mcp");
 
     const documented = protectedResourceMetadata({
       resource: "https://api.example.test/mcp",
@@ -79,6 +74,8 @@ describe("bearerChallenge", () => {
     });
     expect(challenge).not.toContain("\r");
     expect(challenge).not.toContain("\n");
-    expect(challenge).toBe('Bearer realm="gapX-Injected: yes", error="invalid_token"');
+    expect(challenge).toBe(
+      'Bearer realm="gapX-Injected: yes", error="invalid_token"',
+    );
   });
 });

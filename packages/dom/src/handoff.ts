@@ -30,14 +30,18 @@ export const DEFAULT_HANDOFF_TTL_MS = 5 * 60_000;
 function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 function base64UrlToBytes(value: string): Uint8Array {
   if (!/^[A-Za-z0-9_-]+$/.test(value)) {
     throw new Error("Invalid base64url value.");
   }
-  const padded = value.replace(/-/g, "+").replace(/_/g, "/") +
+  const padded =
+    value.replace(/-/g, "+").replace(/_/g, "/") +
     "=".repeat((4 - (value.length % 4)) % 4);
   const binary = atob(padded);
   const bytes = new Uint8Array(binary.length);
@@ -112,8 +116,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * `v1.<base64url(json)>.<base64url(hmac-sha256)>` and the payload contains
  * `{ action, args, iat, exp, nonce }`. Arguments are never added to the URL.
  */
-export async function createHandoffUrl(options: CreateHandoffUrlOptions): Promise<string> {
-  if (typeof options.action !== "string" || options.action.trim().length === 0) {
+export async function createHandoffUrl(
+  options: CreateHandoffUrlOptions,
+): Promise<string> {
+  if (
+    typeof options.action !== "string" ||
+    options.action.trim().length === 0
+  ) {
     throw invalidInput("A handoff URL needs an action name.");
   }
   if (typeof options.secret !== "string" || options.secret.length === 0) {
@@ -132,7 +141,9 @@ export async function createHandoffUrl(options: CreateHandoffUrlOptions): Promis
     exp: iat + Math.max(1, Math.floor(ttlMs)),
     nonce: randomNonce(),
   };
-  const encoded = bytesToBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
+  const encoded = bytesToBase64Url(
+    new TextEncoder().encode(JSON.stringify(payload)),
+  );
   const signature = bytesToBase64Url(await sign(encoded, options.secret));
   const token = `v1.${encoded}.${signature}`;
   return handoffUrl(options.baseUrl ?? "", options.path ?? "/", token);
@@ -147,7 +158,11 @@ export async function verifyHandoffState(
   secret: string,
 ): Promise<HandoffState | null> {
   try {
-    if (typeof token !== "string" || typeof secret !== "string" || secret.length === 0) {
+    if (
+      typeof token !== "string" ||
+      typeof secret !== "string" ||
+      secret.length === 0
+    ) {
       return null;
     }
     const parts = token.split(".");
@@ -167,7 +182,8 @@ export async function verifyHandoffState(
     const { action, args, iat, exp, nonce } = payload;
     if (typeof action !== "string" || action.length === 0) return null;
     if (typeof iat !== "number" || !Number.isFinite(iat)) return null;
-    if (typeof exp !== "number" || !Number.isFinite(exp) || exp < iat) return null;
+    if (typeof exp !== "number" || !Number.isFinite(exp) || exp < iat)
+      return null;
     if (typeof nonce !== "string" || nonce.length === 0) return null;
     if (Date.now() >= exp) return null;
 

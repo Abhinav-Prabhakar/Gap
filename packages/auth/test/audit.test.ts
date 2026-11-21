@@ -4,11 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { AuditEvent } from "gapmcp-core";
 import { GapError } from "gapmcp-core";
-import {
-  JsonlAuditLog,
-  MemoryAuditLog,
-  createAuditEvent,
-} from "../src/index";
+import { JsonlAuditLog, MemoryAuditLog, createAuditEvent } from "../src/index";
 
 function event(id: string): AuditEvent {
   return {
@@ -113,9 +109,9 @@ describe("JsonlAuditLog", () => {
 
     const lines = (await readFile(path, "utf8")).trimEnd().split("\n");
     expect(lines).toHaveLength(25);
-    expect(
-      lines.map((line) => (JSON.parse(line) as AuditEvent).id),
-    ).toEqual(Array.from({ length: 25 }, (_value, index) => String(index)));
+    expect(lines.map((line) => (JSON.parse(line) as AuditEvent).id)).toEqual(
+      Array.from({ length: 25 }, (_value, index) => String(index)),
+    );
   });
 
   it("appends across instances and closes idempotently", async () => {

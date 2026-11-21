@@ -27,7 +27,10 @@ export function base64Encode(bytes: Uint8Array): string {
 
 /** Unpadded base64url, used in compact approval and handoff tokens. */
 export function base64UrlEncode(bytes: Uint8Array): string {
-  return base64Encode(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return base64Encode(bytes)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]*$/;
@@ -104,7 +107,10 @@ export async function importHmacKey(secret: Uint8Array): Promise<CryptoKey> {
 }
 
 /** Produce an HMAC-SHA256 signature over raw bytes. */
-export async function hmacSha256(key: CryptoKey, data: Uint8Array): Promise<Uint8Array> {
+export async function hmacSha256(
+  key: CryptoKey,
+  data: Uint8Array,
+): Promise<Uint8Array> {
   const signature = await globalThis.crypto.subtle.sign(
     "HMAC",
     key,

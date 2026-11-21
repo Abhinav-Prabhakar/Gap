@@ -278,6 +278,11 @@ export class GapPolicy implements PolicyEngine {
     this.document = parsePolicy(input);
   }
 
+  /**
+   * Evaluate one action invocation. Returns a decision and, for a prompt
+   * confirmation or a dry run, the redaction paths and dry-run metadata the
+   * pipeline should honour.
+   */
   evaluate(input: PolicyEvaluationInput): PolicyDecision {
     const { action, args, ctx } = input;
     const actionName = action.name;
@@ -289,7 +294,6 @@ export class GapPolicy implements PolicyEngine {
     if (matchesAny(this.document.deny, actionName)) {
       return {
         decision: "deny",
-        code: "POLICY_DENIED",
         reason: "Denied by the policy document.",
       };
     }
@@ -301,7 +305,6 @@ export class GapPolicy implements PolicyEngine {
       if (rule.deny === true) {
         return {
           decision: "deny",
-          code: "POLICY_DENIED",
           reason: rule.reason ?? "Denied by policy.",
         };
       }
@@ -369,7 +372,6 @@ export class GapPolicy implements PolicyEngine {
     if (this.document.default === "deny" && !allowRule) {
       return {
         decision: "deny",
-        code: "POLICY_DENIED",
         reason: "Denied by default policy.",
       };
     }

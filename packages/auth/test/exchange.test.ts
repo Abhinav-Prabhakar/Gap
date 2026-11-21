@@ -9,7 +9,10 @@ interface Captured {
 
 type FetchResult = Response | (() => Response | Promise<Response>);
 
-function mockFetch(response: FetchResult, captured: Captured[] = []): typeof fetch {
+function mockFetch(
+  response: FetchResult,
+  captured: Captured[] = [],
+): typeof fetch {
   return async (input, init) => {
     captured.push({ url: String(input), init: init ?? {} });
     return typeof response === "function" ? response() : response;
@@ -155,6 +158,30 @@ describe("exchangeToken", () => {
     });
     expect(JSON.stringify(gap.details)).not.toContain("must-not-leak");
     expect(gap.message).not.toContain("subject-token-value");
+  });
+
+  it("redacts subject tokens and client secrets from error details", async () => {
+    const error = await exchangeToken({
+      ...BASE_OPTIONS,
+      clientId: "client_1",
+      clientSecret: "super-secret",
+      fetch: mockFetch(
+        jsonResponse(
+          {
+            error: "invalid_request",
+            error_description:
+              "subject-token-value was rejected for super-secret",
+          },
+          400,
+        ),
+      ),
+    }).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(GapError);
+    const details = JSON.stringify((error as GapError).details);
+    expect(details).not.toContain("subject-token-value");
+    expect(details).not.toContain("super-secret");
+    expect(details).toContain("[REDACTED]");
   });
 
   it("raises UNAVAILABLE for network errors", async () => {

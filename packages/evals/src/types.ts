@@ -33,7 +33,7 @@ export interface Planner {
  * or a handler invoked for every call.
  */
 export type MockPlannerResponses =
-  | ToolChoice[]
+  | readonly ToolChoice[]
   | ((input: PlannerInput) => ToolChoice | Promise<ToolChoice>);
 
 /** Options for {@link httpPlanner}. */
@@ -136,11 +136,11 @@ export interface RunEvalsOptions {
   /** Registry used to build the scoped tool catalog. */
   registry: ActionRegistry;
   /** Cases, executed sequentially in array order. */
-  cases: EvalCase[];
+  cases: readonly EvalCase[];
   /** Planner under test. */
   planner: Planner;
   /** Scopes used to filter visible tools. Defaults to `["*"]`. */
-  scopes?: string[];
+  scopes?: readonly string[];
   /** Optional system prompt shared by every case. */
   system?: string;
 }

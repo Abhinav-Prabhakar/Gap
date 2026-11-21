@@ -168,6 +168,9 @@ describe("httpPlanner", () => {
     expect(normalizeChatCompletionsEndpoint("https://api.example.com/v1/")).toBe(
       "https://api.example.com/v1/chat/completions",
     );
+    expect(
+      normalizeChatCompletionsEndpoint("https://api.example.com/v1?api-version=2024-01-01"),
+    ).toBe("https://api.example.com/v1/chat/completions?api-version=2024-01-01");
   });
 
   it("returns a null tool when the model makes no tool call", async () => {

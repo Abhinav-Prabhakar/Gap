@@ -2,13 +2,7 @@ import { GapError, type GapErrorCode, type RiskLevel } from "gapmcp-core";
 
 /** The subset of HTTP methods understood by both importers. */
 export type ImportedHttpMethod =
-  | "get"
-  | "post"
-  | "put"
-  | "patch"
-  | "delete"
-  | "head"
-  | "options";
+  "get" | "post" | "put" | "patch" | "delete" | "head" | "options";
 
 /** True when `value` is a non-null, non-array object. */
 export function isRecord(value: unknown): value is Record<string, any> {
@@ -31,7 +25,9 @@ export function joinUrl(baseUrl: string, path: string): string {
  * Pick the JSON media type from an OpenAPI `content` map. Falls back to any
  * media type whose name ends in `+json`, which is common for problem details.
  */
-export function pickJsonMediaType(content: unknown): Record<string, any> | undefined {
+export function pickJsonMediaType(
+  content: unknown,
+): Record<string, any> | undefined {
   if (!isRecord(content)) return undefined;
   const direct = content["application/json"];
   if (isRecord(direct)) return direct;
@@ -62,7 +58,11 @@ export function safeBodySnippet(body: string, limit = 500): string {
 }
 
 /** Turn a non-2xx upstream response into a GapError with a safe body snippet. */
-export function upstreamError(status: number, statusText: string, body: string): GapError {
+export function upstreamError(
+  status: number,
+  statusText: string,
+  body: string,
+): GapError {
   const snippet = safeBodySnippet(body).trim();
   const label = statusText ? `${status} ${statusText}` : String(status);
   const code = gapCodeForStatus(status);
@@ -75,7 +75,10 @@ export function upstreamError(status: number, statusText: string, body: string):
 }
 
 /** Parse a successful upstream response as JSON when possible, else text. */
-export function readUpstreamBody(body: string, contentType: string | null): unknown {
+export function readUpstreamBody(
+  body: string,
+  contentType: string | null,
+): unknown {
   if (body.length === 0) return undefined;
   const looksJson =
     (contentType !== null && /json/i.test(contentType)) ||
@@ -91,7 +94,9 @@ export function readUpstreamBody(body: string, contentType: string | null): unkn
 }
 
 /** An AbortSignal that may be absent when execute is called outside the pipeline. */
-export function signalFrom(ctx: { signal?: AbortSignal } | undefined): AbortSignal | undefined {
+export function signalFrom(
+  ctx: { signal?: AbortSignal } | undefined,
+): AbortSignal | undefined {
   return ctx?.signal;
 }
 

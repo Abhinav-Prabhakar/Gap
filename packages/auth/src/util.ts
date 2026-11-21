@@ -14,7 +14,8 @@ export function uniqueStrings(values: readonly unknown[]): string[] {
   const result: string[] = [];
   const seen = new Set<string>();
   for (const value of values) {
-    if (typeof value !== "string" || value.length === 0 || seen.has(value)) continue;
+    if (typeof value !== "string" || value.length === 0 || seen.has(value))
+      continue;
     seen.add(value);
     result.push(value);
   }
@@ -30,7 +31,8 @@ export function mergeScopes(
   for (const group of groups) {
     if (!group) continue;
     for (const scope of group) {
-      if (typeof scope !== "string" || scope.length === 0 || seen.has(scope)) continue;
+      if (typeof scope !== "string" || scope.length === 0 || seen.has(scope))
+        continue;
       seen.add(scope);
       result.push(scope);
     }

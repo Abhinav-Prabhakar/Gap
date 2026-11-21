@@ -1,6 +1,11 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
-import { GapError, invalidInput, type AnyAction, type ActionDefinition } from "gapmcp-core";
+import {
+  GapError,
+  invalidInput,
+  type AnyAction,
+  type ActionDefinition,
+} from "gapmcp-core";
 import {
   appendQueryValue,
   isRecord,
@@ -12,7 +17,8 @@ import {
 } from "./http.js";
 
 /** The Next.js App Router HTTP method exports this scanner understands. */
-export type NextRouteMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
+export type NextRouteMethod =
+  "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
 
 /** Options accepted by {@link scanNextRoutes}. */
 export interface ScanNextRoutesOptions {
@@ -36,7 +42,13 @@ const METHOD_NAMES: readonly NextRouteMethod[] = [
   "OPTIONS",
 ];
 
-const IGNORED_DIRECTORIES = new Set(["node_modules", ".next", ".git", ".turbo", "dist"]);
+const IGNORED_DIRECTORIES = new Set([
+  "node_modules",
+  ".next",
+  ".git",
+  ".turbo",
+  "dist",
+]);
 
 interface RouteFile {
   absolute: string;
@@ -139,7 +151,10 @@ function detectMethods(source: string): NextRouteMethod[] {
   for (const match of code.matchAll(exportLists)) {
     const body = match[1] ?? "";
     for (const part of body.split(",")) {
-      const exported = part.trim().split(/\s+as\s+/i)[0]?.trim();
+      const exported = part
+        .trim()
+        .split(/\s+as\s+/i)[0]
+        ?.trim();
       if (exported && (METHOD_NAMES as readonly string[]).includes(exported)) {
         found.add(exported as NextRouteMethod);
       }
@@ -181,8 +196,7 @@ function actionName(method: NextRouteMethod, routePath: string): string {
         .replace(/^:/, "")
         .replace(/\?$/, "")
         .replace(/[^A-Za-z0-9]+/g, ".")
-        .replace(/^[.]+|[.]+$/g, "")
-        .toLowerCase(),
+        .replace(/^[.]+|[.]+$/g, ""),
     )
     .filter((segment) => segment.length > 0);
   return `${method}.${segments.length > 0 ? segments.join(".") : "root"}`;
@@ -197,7 +211,10 @@ function pathParameterNames(routePath: string): string[] {
   return names;
 }
 
-function nextInputSchema(routePath: string, method: NextRouteMethod): Record<string, any> {
+function nextInputSchema(
+  routePath: string,
+  method: NextRouteMethod,
+): Record<string, any> {
   const properties: Record<string, any> = {};
   for (const name of pathParameterNames(routePath)) {
     properties[name] = {
@@ -237,12 +254,21 @@ interface ProxyConfig {
   fetch?: typeof fetch;
 }
 
-function setHeader(headers: Record<string, string>, name: string, value: string): void {
-  const existing = Object.keys(headers).find((key) => key.toLowerCase() === name.toLowerCase());
+function setHeader(
+  headers: Record<string, string>,
+  name: string,
+  value: string,
+): void {
+  const existing = Object.keys(headers).find(
+    (key) => key.toLowerCase() === name.toLowerCase(),
+  );
   headers[existing ?? name] = value;
 }
 
-function resolveRoutePath(config: ProxyConfig, args: Record<string, any>): string {
+function resolveRoutePath(
+  config: ProxyConfig,
+  args: Record<string, any>,
+): string {
   const nested = isRecord(args.params) ? args.params : undefined;
   let resolved = config.routePath.replace(
     /:([A-Za-z0-9_]+)(\?)?/g,
@@ -256,6 +282,7 @@ function resolveRoutePath(config: ProxyConfig, args: Record<string, any>): strin
     },
   );
   resolved = resolved.replace(/\/{2,}/g, "/");
+  if (resolved.length > 1) resolved = resolved.replace(/\/+$/, "");
   if (!resolved.startsWith("/")) resolved = `/${resolved}`;
   return resolved;
 }
@@ -268,7 +295,8 @@ function createProxyExecutor(config: ProxyConfig): ActionDefinition["execute"] {
 
     const query = new URLSearchParams();
     if (isRecord(args.query)) {
-      for (const [name, value] of Object.entries(args.query)) appendQueryValue(query, name, value);
+      for (const [name, value] of Object.entries(args.query))
+        appendQueryValue(query, name, value);
     }
 
     const consumed = new Set([
@@ -284,13 +312,16 @@ function createProxyExecutor(config: ProxyConfig): ActionDefinition["execute"] {
     }
 
     const hasBody = config.method !== "GET" && config.method !== "HEAD";
-    const fallbackBody = hasBody && args.body === undefined ? leftovers : undefined;
+    const fallbackBody =
+      hasBody && args.body === undefined ? leftovers : undefined;
     if (hasBody && fallbackBody === undefined) {
-      for (const [name, value] of Object.entries(leftovers)) appendQueryValue(query, name, value);
+      for (const [name, value] of Object.entries(leftovers))
+        appendQueryValue(query, name, value);
     }
 
     const serialized = query.toString();
-    if (serialized.length > 0) url += `${url.includes("?") ? "&" : "?"}${serialized}`;
+    if (serialized.length > 0)
+      url += `${url.includes("?") ? "&" : "?"}${serialized}`;
 
     const headers: Record<string, string> = { ...config.headers };
     if (isRecord(args.headers)) {
@@ -313,9 +344,12 @@ function createProxyExecutor(config: ProxyConfig): ActionDefinition["execute"] {
 
     const fetcher = config.fetch ?? globalThis.fetch;
     if (typeof fetcher !== "function") {
-      throw new GapError("No fetch implementation is available for this imported route.", {
-        code: "UNAVAILABLE",
-      });
+      throw new GapError(
+        "No fetch implementation is available for this imported route.",
+        {
+          code: "UNAVAILABLE",
+        },
+      );
     }
 
     let response: Response;
@@ -323,15 +357,21 @@ function createProxyExecutor(config: ProxyConfig): ActionDefinition["execute"] {
       response = await fetcher(url, init);
     } catch (error) {
       if (signalFrom(ctx)?.aborted) {
-        throw new GapError(`Request ${config.method} ${routePath} was aborted.`, {
-          code: "TIMEOUT",
-          cause: error,
-        });
+        throw new GapError(
+          `Request ${config.method} ${routePath} was aborted.`,
+          {
+            code: "TIMEOUT",
+            cause: error,
+          },
+        );
       }
-      throw new GapError(`Request ${config.method} ${routePath} failed before a response was received.`, {
-        code: "UNAVAILABLE",
-        cause: error,
-      });
+      throw new GapError(
+        `Request ${config.method} ${routePath} failed before a response was received.`,
+        {
+          code: "UNAVAILABLE",
+          cause: error,
+        },
+      );
     }
 
     const text = await response.text();
@@ -359,18 +399,25 @@ async function isDirectory(path: string): Promise<boolean> {
   }
 }
 
-async function resolveRoots(dir: string): Promise<{ appRoot: string; projectRoot: string }> {
+async function resolveRoots(
+  dir: string,
+): Promise<{ appRoot: string; projectRoot: string }> {
   const absolute = resolve(dir);
   const direct = join(absolute, "app");
-  if (await isDirectory(direct)) return { appRoot: direct, projectRoot: absolute };
+  if (await isDirectory(direct))
+    return { appRoot: direct, projectRoot: absolute };
 
   const srcApp = join(absolute, "src", "app");
-  if (await isDirectory(srcApp)) return { appRoot: srcApp, projectRoot: join(absolute, "src") };
+  if (await isDirectory(srcApp))
+    return { appRoot: srcApp, projectRoot: join(absolute, "src") };
 
   return { appRoot: absolute, projectRoot: absolute };
 }
 
-async function collectRouteFiles(directory: string, files: string[]): Promise<void> {
+async function collectRouteFiles(
+  directory: string,
+  files: string[],
+): Promise<void> {
   let entries;
   try {
     entries = await readdir(directory, { withFileTypes: true });
@@ -397,7 +444,9 @@ async function collectRouteFiles(directory: string, files: string[]): Promise<vo
  * HTTP method into an action. With `baseUrl`, actions proxy to it; without one
  * they are still discoverable but throw a clear wiring error when called.
  */
-export async function scanNextRoutes(options: ScanNextRoutesOptions): Promise<AnyAction[]> {
+export async function scanNextRoutes(
+  options: ScanNextRoutesOptions,
+): Promise<AnyAction[]> {
   const { appRoot, projectRoot } = await resolveRoots(options.dir);
   const absoluteFiles: string[] = [];
   await collectRouteFiles(appRoot, absoluteFiles);
@@ -430,14 +479,10 @@ export async function scanNextRoutes(options: ScanNextRoutesOptions): Promise<An
       used.add(name);
 
       const description = `Handle ${method} ${routePath} requests from ${label}. Imported from a Next.js App Router route handler.`;
-      const risk = riskForMethod(method.toLowerCase() as
-        | "get"
-        | "post"
-        | "put"
-        | "patch"
-        | "delete"
-        | "head"
-        | "options");
+      const risk = riskForMethod(
+        method.toLowerCase() as
+          "get" | "post" | "put" | "patch" | "delete" | "head" | "options",
+      );
       const execute =
         options.baseUrl !== undefined && options.baseUrl.length > 0
           ? createProxyExecutor({
@@ -454,7 +499,7 @@ export async function scanNextRoutes(options: ScanNextRoutesOptions): Promise<An
         description,
         input: nextInputSchema(routePath, method),
         scopes: [],
-        risk,
+        risk: risk.risk,
         ...(risk.confirm ? { confirm: true } : {}),
         tags: ["next"],
         meta: { "gap/next": { file: label, path: routePath } },
@@ -473,5 +518,7 @@ export function nextRoutePath(appRoot: string, routeFile: string): string {
 
 /** The source label used in descriptions for a route file. */
 export function nextRouteLabel(projectRoot: string, routeFile: string): string {
-  return relative(resolve(projectRoot), resolve(routeFile)).split(sep).join("/");
+  return relative(resolve(projectRoot), resolve(routeFile))
+    .split(sep)
+    .join("/");
 }

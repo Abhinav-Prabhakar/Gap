@@ -67,6 +67,7 @@ export function renderDomRuntime(options: DomRuntimeOptions = {}): string {
 
   function lookup(name) {
     var list = api.actions;
+    if (list && !Array.isArray(list) && Array.isArray(list.actions)) list = list.actions;
     var index;
     if (Array.isArray(list)) {
       for (index = 0; index < list.length; index += 1) {
@@ -160,16 +161,19 @@ export function renderDomRuntime(options: DomRuntimeOptions = {}): string {
     return new Promise(function (resolve, reject) {
       var settled = false;
       var observer = new MutationObserver(check);
+      var poll = setInterval(check, 25);
       var timer = setTimeout(function () {
         if (settled) return;
         settled = true;
         observer.disconnect();
+        clearInterval(poll);
         reject(new Error("Timed out waiting for " + selector));
       }, timeoutMs);
       function finish(element) {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
+        clearInterval(poll);
         observer.disconnect();
         resolve(element);
       }

@@ -1,4 +1,9 @@
-import type { AuthProvider, AuthResult, Principal, PrincipalType } from "gapmcp-core";
+import type {
+  AuthProvider,
+  AuthResult,
+  Principal,
+  PrincipalType,
+} from "gapmcp-core";
 import { GapError } from "gapmcp-core";
 import {
   createLocalJWKSet,
@@ -53,10 +58,9 @@ const PRINCIPAL_TYPES = new Set<PrincipalType>([
  */
 export function jwtAuth(options: JwtAuthOptions): AuthProvider {
   if (options.jwks === undefined && options.jwksUri === undefined) {
-    throw new GapError(
-      "jwtAuth requires either jwks or jwksUri.",
-      { code: "INVALID_INPUT" },
-    );
+    throw new GapError("jwtAuth requires either jwks or jwksUri.", {
+      code: "INVALID_INPUT",
+    });
   }
 
   const tolerance =
@@ -79,9 +83,7 @@ export function jwtAuth(options: JwtAuthOptions): AuthProvider {
       if (!isRecord(options.jwks)) {
         throw new TypeError("jwks must be an object.");
       }
-      keyResolver = createLocalJWKSet(
-        options.jwks as unknown as JSONWebKeySet,
-      );
+      keyResolver = createLocalJWKSet(options.jwks as unknown as JSONWebKeySet);
     } else {
       const url = new URL(options.jwksUri as string);
       keyResolver = createRemoteJWKSet(url);
@@ -217,5 +219,7 @@ function normalizePrincipal(value: Principal | null): Principal | null {
 }
 
 function isPrincipalType(value: unknown): value is PrincipalType {
-  return typeof value === "string" && PRINCIPAL_TYPES.has(value as PrincipalType);
+  return (
+    typeof value === "string" && PRINCIPAL_TYPES.has(value as PrincipalType)
+  );
 }

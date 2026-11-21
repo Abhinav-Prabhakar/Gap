@@ -250,6 +250,7 @@ export class ReplayRecorder {
   readonly #now: () => number;
   readonly #calls: RecordedCall[] = [];
 
+  /** Create an empty recorder with optionally redacted argument/result paths. */
   constructor(options: ReplayRecorderOptions = {}) {
     this.#redactPaths = [...(options.redact ?? [])];
     this.#now = options.now ?? Date.now;

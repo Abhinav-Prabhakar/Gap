@@ -1,12 +1,6 @@
 import { createServer } from "node:http";
 import { beforeAll, describe, expect, it } from "vitest";
-import {
-  SignJWT,
-  decodeJwt,
-  exportJWK,
-  generateKeyPair,
-  type JWK,
-} from "jose";
+import { SignJWT, decodeJwt, exportJWK, generateKeyPair, type JWK } from "jose";
 import { jwtAuth, type JwtAuthOptions } from "../src/index";
 
 const ISSUER = "https://issuer.example.test";
@@ -110,10 +104,7 @@ describe("jwtAuth", () => {
 
     const result = await provider().authenticate(request(token));
 
-    expect(result?.principal.scopes).toEqual([
-      "billing.read",
-      "billing.write",
-    ]);
+    expect(result?.principal.scopes).toEqual(["billing.read", "billing.write"]);
     expect(result?.principal.tenantId).toBe("tenant_2");
     expect(result?.principal.type).toBe("user");
   });
@@ -170,9 +161,10 @@ describe("jwtAuth", () => {
   });
 
   it("rejects unsigned alg:none tokens", async () => {
-    const token = `${base64Url({ alg: "none", typ: "JWT" })}.${base64Url(
-      { sub: "user_1", exp: Math.floor(Date.now() / 1000) + 60 },
-    )}.`;
+    const token = `${base64Url({ alg: "none", typ: "JWT" })}.${base64Url({
+      sub: "user_1",
+      exp: Math.floor(Date.now() / 1000) + 60,
+    })}.`;
     expect(await provider().authenticate(request(token))).toBeNull();
   });
 
@@ -192,7 +184,11 @@ describe("jwtAuth", () => {
         }),
       ),
     ).toBeNull();
-    expect(await providerUnderTest.authenticate(new Request("https://api.example.test/mcp"))).toBeNull();
+    expect(
+      await providerUnderTest.authenticate(
+        new Request("https://api.example.test/mcp"),
+      ),
+    ).toBeNull();
   });
 
   it("lets a custom mapper override claims", async () => {
@@ -242,9 +238,7 @@ describe("jwtAuth", () => {
 
   it("requires JWKS configuration", () => {
     expect(() => jwtAuth({ issuer: ISSUER })).toThrow();
-    expect(() =>
-      jwtAuth({ jwksUri: "not a url", issuer: ISSUER }),
-    ).toThrow();
+    expect(() => jwtAuth({ jwksUri: "not a url", issuer: ISSUER })).toThrow();
   });
 
   it("verifies tokens against a remote JWKS endpoint", async () => {

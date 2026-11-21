@@ -12,10 +12,9 @@ function tokenFrom(url: string): string {
 function decodePayload(token: string): Record<string, unknown> {
   const encoded = token.split(".")[1];
   if (!encoded) throw new Error("Token has no payload");
-  return JSON.parse(Buffer.from(encoded, "base64url").toString("utf8")) as Record<
-    string,
-    unknown
-  >;
+  return JSON.parse(
+    Buffer.from(encoded, "base64url").toString("utf8"),
+  ) as Record<string, unknown>;
 }
 
 afterEach(() => {
@@ -46,7 +45,7 @@ describe("createHandoffUrl", () => {
     expect(state).not.toBeNull();
     expect(state?.action).toBe("invoices.create");
     expect(state?.args).toEqual({ customerId: "cus_1", total: 42 });
-    expect(state?.exp - (state?.iat ?? 0)).toBe(60_000);
+    expect(state!.exp - state!.iat).toBe(60_000);
     expect(state?.nonce).toMatch(/^[A-Za-z0-9_-]+$/);
   });
 
@@ -90,10 +89,20 @@ describe("createHandoffUrl", () => {
 
   it("rejects empty actions, secrets, and non-positive TTLs", async () => {
     await expect(
-      createHandoffUrl({ baseUrl: "https://app.example.com", action: "", args: {}, secret: SECRET }),
+      createHandoffUrl({
+        baseUrl: "https://app.example.com",
+        action: "",
+        args: {},
+        secret: SECRET,
+      }),
     ).rejects.toMatchObject({ code: "INVALID_INPUT" });
     await expect(
-      createHandoffUrl({ baseUrl: "https://app.example.com", action: "a", args: {}, secret: "" }),
+      createHandoffUrl({
+        baseUrl: "https://app.example.com",
+        action: "a",
+        args: {},
+        secret: "",
+      }),
     ).rejects.toMatchObject({ code: "INVALID_INPUT" });
     await expect(
       createHandoffUrl({
@@ -187,6 +196,8 @@ describe("verifyHandoffState", () => {
       await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload)),
     ).toString("base64url");
 
-    expect(await verifyHandoffState(`v1.${payload}.${signature}`, secret)).toBeNull();
+    expect(
+      await verifyHandoffState(`v1.${payload}.${signature}`, secret),
+    ).toBeNull();
   });
 });

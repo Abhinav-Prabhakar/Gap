@@ -1,14 +1,21 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
-import { GapError, silentLogger, type ActionContext, type AnyAction } from "gapmcp-core";
+import {
+  GapError,
+  silentLogger,
+  type ActionContext,
+  type AnyAction,
+} from "gapmcp-core";
 import {
   importOpenApi,
   parseOpenApiSpec,
   type OpenApiOperation,
 } from "../src/index.js";
 
-const fixturePath = fileURLToPath(new URL("./fixtures/customers.yaml", import.meta.url));
+const fixturePath = fileURLToPath(
+  new URL("./fixtures/customers.yaml", import.meta.url),
+);
 
 async function fixture(): Promise<string> {
   return readFile(fixturePath, "utf8");
@@ -36,9 +43,10 @@ interface FetchCall {
   init: RequestInit | undefined;
 }
 
-function mockFetch(
-  respond: () => Response | Promise<Response>,
-): { fetch: typeof fetch; calls: FetchCall[] } {
+function mockFetch(respond: () => Response | Promise<Response>): {
+  fetch: typeof fetch;
+  calls: FetchCall[];
+} {
   const calls: FetchCall[] = [];
   const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
     calls.push({ url: String(input), init });
@@ -72,7 +80,9 @@ describe("parseOpenApiSpec", () => {
   it("accepts JSON text and plain objects without mutating the input", () => {
     const input = {
       openapi: "3.0.0",
-      paths: { "/ping": { get: { responses: { "200": { description: "ok" } } } } },
+      paths: {
+        "/ping": { get: { responses: { "200": { description: "ok" } } } },
+      },
     };
     const fromJson = parseOpenApiSpec(JSON.stringify(input));
     expect(fromJson.paths["/ping"].get.responses["200"].description).toBe("ok");
@@ -86,7 +96,11 @@ describe("parseOpenApiSpec", () => {
     const spec = parseOpenApiSpec({
       openapi: "3.0.0",
       paths: {},
-      components: { schemas: { External: { $ref: "other.yaml#/components/schemas/External" } } },
+      components: {
+        schemas: {
+          External: { $ref: "other.yaml#/components/schemas/External" },
+        },
+      },
     });
     expect(spec.components.schemas.External).toEqual({
       $ref: "other.yaml#/components/schemas/External",
@@ -133,7 +147,10 @@ describe("importOpenApi", () => {
         metadata: { type: "object", description: "Free-form metadata." },
       },
     });
-    expect(create.ui).toMatchObject({ route: "/customers/new", action: "customers.create" });
+    expect(create.ui).toMatchObject({
+      route: "/customers/new",
+      action: "customers.create",
+    });
     expect(create.output).toMatchObject({ type: "object" });
 
     const remove = actionNamed(actions, "deleteCustomer");
@@ -178,23 +195,34 @@ describe("importOpenApi", () => {
       spec: await fixture(),
       include: (operation) => {
         seen.push(operation);
-        return operation.method === "get" && operation.path.startsWith("/customers");
+        return (
+          operation.method === "get" && operation.path.startsWith("/customers")
+        );
       },
     });
 
     expect(seen).toHaveLength(7);
     expect(seen[0]?.operation.summary).toBe("List customers");
-    expect(actions.map((action) => action.name)).toEqual(["listCustomers", "getCustomer"]);
+    expect(actions.map((action) => action.name)).toEqual([
+      "listCustomers",
+      "getCustomer",
+    ]);
   });
 
   it("returns no actions when include rejects everything", async () => {
-    const actions = await importOpenApi({ spec: await fixture(), include: () => false });
+    const actions = await importOpenApi({
+      spec: await fixture(),
+      include: () => false,
+    });
     expect(actions).toEqual([]);
   });
 
   it("executes GET requests with encoded paths, queries, and headers", async () => {
     const { fetch: fetchImpl, calls } = mockFetch(() => jsonResponse([]));
-    const actions = await importOpenApi({ spec: await fixture(), fetch: fetchImpl });
+    const actions = await importOpenApi({
+      spec: await fixture(),
+      fetch: fetchImpl,
+    });
 
     const list = actionNamed(actions, "listCustomers");
     const result = await list.execute(
@@ -215,8 +243,13 @@ describe("importOpenApi", () => {
   });
 
   it("executes POST requests with a merged JSON body", async () => {
-    const { fetch: fetchImpl, calls } = mockFetch(() => jsonResponse({ id: "c1" }, 201));
-    const actions = await importOpenApi({ spec: await fixture(), fetch: fetchImpl });
+    const { fetch: fetchImpl, calls } = mockFetch(() =>
+      jsonResponse({ id: "c1" }, 201),
+    );
+    const actions = await importOpenApi({
+      spec: await fixture(),
+      fetch: fetchImpl,
+    });
 
     const create = actionNamed(actions, "createCustomer");
     const result = await create.execute(
@@ -232,7 +265,9 @@ describe("importOpenApi", () => {
     expect(result).toEqual({ id: "c1" });
     expect(calls[0]?.url).toBe("https://api.example.com/v1/customers");
     expect(calls[0]?.init?.method).toBe("POST");
-    expect(calls[0]?.init?.headers).toMatchObject({ "Content-Type": "application/json" });
+    expect(calls[0]?.init?.headers).toMatchObject({
+      "Content-Type": "application/json",
+    });
     expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({
       name: "Ada",
       email: "ada@example.com",
@@ -263,7 +298,9 @@ describe("importOpenApi", () => {
   });
 
   it("supports Swagger 2.0 host, basePath, and body parameters", async () => {
-    const { fetch: fetchImpl, calls } = mockFetch(() => jsonResponse({ id: "p1" }));
+    const { fetch: fetchImpl, calls } = mockFetch(() =>
+      jsonResponse({ id: "p1" }),
+    );
     const actions = await importOpenApi({
       spec: {
         swagger: "2.0",
@@ -276,12 +313,20 @@ describe("importOpenApi", () => {
               operationId: "updatePet",
               parameters: [
                 { name: "id", in: "path", required: true, type: "string" },
-                { name: "pet", in: "body", required: true, schema: { type: "object" } },
+                {
+                  name: "pet",
+                  in: "body",
+                  required: true,
+                  schema: { type: "object" },
+                },
               ],
               responses: {
                 "200": {
                   description: "ok",
-                  schema: { type: "object", properties: { id: { type: "string" } } },
+                  schema: {
+                    type: "object",
+                    properties: { id: { type: "string" } },
+                  },
                 },
               },
             },
@@ -317,10 +362,15 @@ describe("importOpenApi", () => {
           headers: { "content-type": "application/json" },
         }),
     );
-    const actions = await importOpenApi({ spec: await fixture(), fetch: fetchImpl });
+    const actions = await importOpenApi({
+      spec: await fixture(),
+      fetch: fetchImpl,
+    });
     const get = actionNamed(actions, "getCustomer");
 
-    const error = await get.execute({ id: "1" }, context()).catch((caught: unknown) => caught);
+    const error = await get
+      .execute({ id: "1" }, context())
+      .catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(GapError);
     expect(error).toMatchObject({ code, status });
     expect((error as GapError).message).toContain("upstream says no");
@@ -330,10 +380,15 @@ describe("importOpenApi", () => {
     const { fetch: fetchImpl } = mockFetch(
       () => new Response("x".repeat(1200), { status: 502 }),
     );
-    const actions = await importOpenApi({ spec: await fixture(), fetch: fetchImpl });
+    const actions = await importOpenApi({
+      spec: await fixture(),
+      fetch: fetchImpl,
+    });
     const ping = actionNamed(actions, "ping");
 
-    const error = (await ping.execute({}, context()).catch((caught: unknown) => caught)) as GapError;
+    const error = (await ping
+      .execute({}, context())
+      .catch((caught: unknown) => caught)) as GapError;
     expect(error.code).toBe("UNAVAILABLE");
     expect((error.details as { body: string }).body).toHaveLength(500);
   });
@@ -345,10 +400,15 @@ describe("importOpenApi", () => {
       throw new DOMException("aborted", "AbortError");
     }) as unknown as typeof fetch;
 
-    const actions = await importOpenApi({ spec: await fixture(), fetch: fetchImpl });
+    const actions = await importOpenApi({
+      spec: await fixture(),
+      fetch: fetchImpl,
+    });
     const ping = actionNamed(actions, "ping");
 
-    await expect(ping.execute({}, context(controller.signal))).rejects.toMatchObject({
+    await expect(
+      ping.execute({}, context(controller.signal)),
+    ).rejects.toMatchObject({
       code: "TIMEOUT",
     });
   });

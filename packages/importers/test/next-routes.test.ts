@@ -2,7 +2,12 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { GapError, silentLogger, type ActionContext, type AnyAction } from "gapmcp-core";
+import {
+  GapError,
+  silentLogger,
+  type ActionContext,
+  type AnyAction,
+} from "gapmcp-core";
 import { scanNextRoutes } from "../src/index.js";
 
 let root: string;
@@ -58,7 +63,11 @@ beforeAll(async () => {
   await writeRoute("app/api/docs/[[...slug]]/route.ts", DOCS_ROUTE);
   await writeRoute("app/api/orders/index/route.ts", ORDERS_INDEX_ROUTE);
   await writeRoute("app/(marketing)/route.ts", ROOT_ROUTE);
-  await writeFile(join(root, "app/api/users/page.tsx"), "export default function Page() {}", "utf8");
+  await writeFile(
+    join(root, "app/api/users/page.tsx"),
+    "export default function Page() {}",
+    "utf8",
+  );
 });
 
 afterAll(async () => {
@@ -88,7 +97,10 @@ interface FetchCall {
   init: RequestInit | undefined;
 }
 
-function mockFetch(respond: () => Response): { fetch: typeof fetch; calls: FetchCall[] } {
+function mockFetch(respond: () => Response): {
+  fetch: typeof fetch;
+  calls: FetchCall[];
+} {
   const calls: FetchCall[] = [];
   const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
     calls.push({ url: String(input), init });
@@ -143,7 +155,9 @@ describe("scanNextRoutes", () => {
   });
 
   it("proxies GET requests with route params and query values", async () => {
-    const { fetch: fetchImpl, calls } = mockFetch(() => Response.json({ id: "42" }));
+    const { fetch: fetchImpl, calls } = mockFetch(() =>
+      Response.json({ id: "42" }),
+    );
     const actions = await scanNextRoutes({
       dir: root,
       baseUrl: "https://proxy.test/",
@@ -158,14 +172,18 @@ describe("scanNextRoutes", () => {
     );
 
     expect(result).toEqual({ id: "42" });
-    expect(calls[0]?.url).toBe("https://proxy.test/api/users/42?expand=team&tags=a&tags=b");
+    expect(calls[0]?.url).toBe(
+      "https://proxy.test/api/users/42?expand=team&tags=a&tags=b",
+    );
     expect(calls[0]?.init?.method).toBe("GET");
     expect(calls[0]?.init?.headers).toEqual({ "X-Proxy": "gap" });
     expect(calls[0]?.init?.body).toBeUndefined();
   });
 
   it("proxies POST bodies and leftover query parameters", async () => {
-    const { fetch: fetchImpl, calls } = mockFetch(() => Response.json({ ok: true }));
+    const { fetch: fetchImpl, calls } = mockFetch(() =>
+      Response.json({ ok: true }),
+    );
     const actions = await scanNextRoutes({
       dir: root,
       baseUrl: "https://proxy.test",
@@ -180,12 +198,16 @@ describe("scanNextRoutes", () => {
 
     expect(calls[0]?.url).toBe("https://proxy.test/api/users?notify=true");
     expect(calls[0]?.init?.method).toBe("POST");
-    expect(calls[0]?.init?.headers).toMatchObject({ "Content-Type": "application/json" });
+    expect(calls[0]?.init?.headers).toMatchObject({
+      "Content-Type": "application/json",
+    });
     expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({ name: "Ada" });
   });
 
   it("uses leftover arguments as the body for mutations without an explicit body", async () => {
-    const { fetch: fetchImpl, calls } = mockFetch(() => Response.json({ ok: true }));
+    const { fetch: fetchImpl, calls } = mockFetch(() =>
+      Response.json({ ok: true }),
+    );
     const actions = await scanNextRoutes({
       dir: root,
       baseUrl: "https://proxy.test",
@@ -213,7 +235,10 @@ describe("scanNextRoutes", () => {
     await actionNamed(actions, "GET.root").execute({}, context());
     expect(calls[0]?.url).toBe("https://proxy.test/");
 
-    await actionNamed(actions, "GET.api.docs.slug").execute({ slug: "guide" }, context());
+    await actionNamed(actions, "GET.api.docs.slug").execute(
+      { slug: "guide" },
+      context(),
+    );
     expect(calls[1]?.url).toBe("https://proxy.test/api/docs/guide");
 
     await actionNamed(actions, "GET.api.docs.slug").execute({}, context());
@@ -239,21 +264,29 @@ describe("scanNextRoutes", () => {
     const actions = await scanNextRoutes({ dir: root });
     const get = actionNamed(actions, "GET.api.users");
 
-    const error = await get.execute({}, context()).catch((caught: unknown) => caught);
+    const error = await get
+      .execute({}, context())
+      .catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(GapError);
     expect(error).toMatchObject({ code: "UNAVAILABLE" });
-    expect((error as GapError).message).toContain("is not wired to an executor");
+    expect((error as GapError).message).toContain(
+      "is not wired to an executor",
+    );
     expect((error as GapError).message).toContain("app/api/users/route.ts");
   });
 
   it("returns an empty list for empty or missing directories", async () => {
     expect(await scanNextRoutes({ dir: emptyRoot })).toEqual([]);
-    expect(await scanNextRoutes({ dir: join(emptyRoot, "missing") })).toEqual([]);
+    expect(await scanNextRoutes({ dir: join(emptyRoot, "missing") })).toEqual(
+      [],
+    );
   });
 
   it("works when dir is the app directory itself", async () => {
     const actions = await scanNextRoutes({ dir: join(root, "app") });
     expect(actions.map((action) => action.name)).toContain("GET.api.users");
-    expect(actionNamed(actions, "GET.api.users").description).toContain("api/users/route.ts");
+    expect(actionNamed(actions, "GET.api.users").description).toContain(
+      "api/users/route.ts",
+    );
   });
 });

@@ -36,18 +36,29 @@ function queryDocument(doc: Document, selector: string): Element | null {
   }
 }
 
-function findRoot(doc: Document, actionId: string | undefined): HTMLElement | null {
+function findRoot(
+  doc: Document,
+  actionId: string | undefined,
+): HTMLElement | null {
   const nodes = doc.querySelectorAll("[data-gap-action]");
   for (const node of Array.from(nodes)) {
-    if (actionId === undefined || node.getAttribute("data-gap-action") === actionId) {
+    if (
+      actionId === undefined ||
+      node.getAttribute("data-gap-action") === actionId
+    ) {
       return node as HTMLElement;
     }
   }
   return null;
 }
 
-function setNativeValue(element: Element, property: string, value: unknown): void {
-  let prototype: object | null = Object.getPrototypeOf(element) as object | null;
+function setNativeValue(
+  element: Element,
+  property: string,
+  value: unknown,
+): void {
+  let prototype: object | null = Object.getPrototypeOf(element) as
+    object | null;
   while (prototype) {
     const descriptor = Object.getOwnPropertyDescriptor(prototype, property);
     if (descriptor?.set) {
@@ -60,7 +71,13 @@ function setNativeValue(element: Element, property: string, value: unknown): voi
 }
 
 function toChecked(value: unknown): boolean {
-  return value === true || value === 1 || value === "1" || value === "true" || value === "on";
+  return (
+    value === true ||
+    value === 1 ||
+    value === "1" ||
+    value === "true" ||
+    value === "on"
+  );
 }
 
 function dispatch(doc: Document, element: Element, type: string): void {
@@ -75,7 +92,8 @@ function setFieldValue(doc: Document, element: Element, value: unknown): void {
     isContentEditable?: boolean;
   };
   if (candidate.isContentEditable) {
-    candidate.textContent = value === undefined || value === null ? "" : String(value);
+    candidate.textContent =
+      value === undefined || value === null ? "" : String(value);
     dispatch(doc, element, "input");
     dispatch(doc, element, "change");
     return;
@@ -86,7 +104,11 @@ function setFieldValue(doc: Document, element: Element, value: unknown): void {
     dispatch(doc, element, "change");
     return;
   }
-  setNativeValue(element, "value", value === undefined || value === null ? "" : String(value));
+  setNativeValue(
+    element,
+    "value",
+    value === undefined || value === null ? "" : String(value),
+  );
   dispatch(doc, element, "input");
   dispatch(doc, element, "change");
 }
@@ -113,7 +135,10 @@ function readResult(element: Element | null): string | undefined {
   if (!element) return undefined;
   const tag = element.tagName;
   if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
-    return String((element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement).value);
+    return String(
+      (element as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)
+        .value,
+    );
   }
   return (element.textContent ?? "").trim();
 }
@@ -123,6 +148,7 @@ function waitForElement(
   selector: string,
   timeoutMs: number,
   signal: AbortSignal | undefined,
+  requireValue = false,
 ): Promise<Element> {
   return new Promise<Element>((resolve, reject) => {
     const aborted = (): GapError =>
@@ -132,7 +158,14 @@ function waitForElement(
       return;
     }
 
-    const existing = queryDocument(doc, selector);
+    const locate = (): Element | null => {
+      const element = queryDocument(doc, selector);
+      if (!element) return null;
+      if (requireValue && readResult(element) === "") return null;
+      return element;
+    };
+
+    const existing = locate();
     if (existing) {
       resolve(existing);
       return;
@@ -148,7 +181,7 @@ function waitForElement(
     };
     const check = (): void => {
       if (settled) return;
-      const element = queryDocument(doc, selector);
+      const element = locate();
       if (element) finish(() => resolve(element));
     };
 
@@ -171,7 +204,8 @@ function waitForElement(
 
     const Observer =
       doc.defaultView?.MutationObserver ??
-      (globalThis as { MutationObserver?: typeof MutationObserver }).MutationObserver;
+      (globalThis as { MutationObserver?: typeof MutationObserver })
+        .MutationObserver;
 
     if (Observer) {
       const observer = new Observer(check);
@@ -182,10 +216,11 @@ function waitForElement(
         characterData: true,
       });
       cleanups.push(() => observer.disconnect());
-    } else {
-      const interval = setInterval(check, 25);
-      cleanups.push(() => clearInterval(interval));
     }
+    // Poll as well: setting an input's `value` property does not emit a
+    // mutation record, but it is a common way for apps to publish a result.
+    const interval = setInterval(check, 25);
+    cleanups.push(() => clearInterval(interval));
     check();
   });
 }
@@ -230,7 +265,8 @@ export async function executeUiAction(
 
     let target: Element = root;
     if (binding.submit) {
-      const submit = queryWithin(root, binding.submit) ?? queryDocument(doc, binding.submit);
+      const submit =
+        queryWithin(root, binding.submit) ?? queryDocument(doc, binding.submit);
       if (submit) target = submit;
     }
     const clickable = target as HTMLElement;
@@ -242,7 +278,13 @@ export async function executeUiAction(
     }
     let resultElement: Element | null = null;
     if (binding.result) {
-      resultElement = await waitForElement(doc, binding.result, timeoutMs, options.signal);
+      resultElement = await waitForElement(
+        doc,
+        binding.result,
+        timeoutMs,
+        options.signal,
+        true,
+      );
     }
 
     const value = readResult(resultElement);

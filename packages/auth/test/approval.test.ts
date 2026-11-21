@@ -22,7 +22,10 @@ function encodePayload(value: unknown): string {
 
 describe("HmacApprovalGate", () => {
   it("issues and verifies a grant bound to args, action and principal", async () => {
-    const gate = new HmacApprovalGate({ secret: "test-secret", now: () => NOW });
+    const gate = new HmacApprovalGate({
+      secret: "test-secret",
+      now: () => NOW,
+    });
     const issued = await gate.issue({ ...REQUEST, ttlMs: 60_000 });
 
     expect(issued.token).toMatch(/^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
@@ -47,7 +50,10 @@ describe("HmacApprovalGate", () => {
   });
 
   it("hashes arguments canonically regardless of key order", async () => {
-    const gate = new HmacApprovalGate({ secret: "test-secret", now: () => NOW });
+    const gate = new HmacApprovalGate({
+      secret: "test-secret",
+      now: () => NOW,
+    });
     const issued = await gate.issue({
       action: ACTION,
       args: { b: 2, a: 1 },
@@ -63,23 +69,34 @@ describe("HmacApprovalGate", () => {
   });
 
   it("uses the default ten minute lifetime", async () => {
-    const gate = new HmacApprovalGate({ secret: "test-secret", now: () => NOW });
+    const gate = new HmacApprovalGate({
+      secret: "test-secret",
+      now: () => NOW,
+    });
     const issued = await gate.issue(REQUEST);
     const payload = decodePayload(issued.token);
 
-    expect((payload.exp as number) - (payload.iat as number)).toBe(10 * 60 * 1000);
+    expect((payload.exp as number) - (payload.iat as number)).toBe(
+      10 * 60 * 1000,
+    );
     expect(issued.grant.expiresAt - issued.grant.issuedAt).toBe(10 * 60 * 1000);
   });
 
   it("rejects different arguments, actions or principals", async () => {
-    const gate = new HmacApprovalGate({ secret: "test-secret", now: () => NOW });
+    const gate = new HmacApprovalGate({
+      secret: "test-secret",
+      now: () => NOW,
+    });
     const issued = await gate.issue(REQUEST);
 
     expect(
       await gate.verify(issued.token, { ...REQUEST, args: { id: "inv_2" } }),
     ).toBeNull();
     expect(
-      await gate.verify(issued.token, { ...REQUEST, action: "invoices.refund" }),
+      await gate.verify(issued.token, {
+        ...REQUEST,
+        action: "invoices.refund",
+      }),
     ).toBeNull();
     expect(
       await gate.verify(issued.token, { ...REQUEST, principalId: "user_2" }),
@@ -87,18 +104,23 @@ describe("HmacApprovalGate", () => {
   });
 
   it("rejects tokens with a tampered signature or payload", async () => {
-    const gate = new HmacApprovalGate({ secret: "test-secret", now: () => NOW });
+    const gate = new HmacApprovalGate({
+      secret: "test-secret",
+      now: () => NOW,
+    });
     const issued = await gate.issue(REQUEST);
-
-    const last = issued.token.slice(-1);
-    const tamperedSignature =
-      issued.token.slice(0, -1) + (last === "A" ? "B" : "A");
-    expect(await gate.verify(tamperedSignature, REQUEST)).toBeNull();
 
     const [version, payload, signature] = issued.token.split(".");
     expect(version).toBe("v1");
     expect(payload).toBeDefined();
     expect(signature).toBeDefined();
+
+    const signatureBytes = Buffer.from(signature as string, "base64url");
+    signatureBytes[0] = (signatureBytes[0] ?? 0) ^ 0x01;
+    const tamperedSignature = `v1.${payload}.${signatureBytes.toString(
+      "base64url",
+    )}`;
+    expect(await gate.verify(tamperedSignature, REQUEST)).toBeNull();
     const changed = decodePayload(issued.token);
     changed.action = "invoices.refund";
     const tamperedPayload = `v1.${encodePayload(changed)}.${signature}`;
@@ -136,7 +158,10 @@ describe("HmacApprovalGate", () => {
   });
 
   it("rejects malformed tokens before parsing JSON", async () => {
-    const gate = new HmacApprovalGate({ secret: "test-secret", now: () => NOW });
+    const gate = new HmacApprovalGate({
+      secret: "test-secret",
+      now: () => NOW,
+    });
     const signature = "A".repeat(43);
     const malformed = [
       "",
@@ -157,7 +182,10 @@ describe("HmacApprovalGate", () => {
   });
 
   it("issues unique ids and nonces for identical requests", async () => {
-    const gate = new HmacApprovalGate({ secret: "test-secret", now: () => NOW });
+    const gate = new HmacApprovalGate({
+      secret: "test-secret",
+      now: () => NOW,
+    });
     const first = await gate.issue(REQUEST);
     const second = await gate.issue(REQUEST);
 
@@ -179,9 +207,9 @@ describe("HmacApprovalGate", () => {
 
   it("rejects empty secrets and invalid lifetimes", () => {
     expect(() => new HmacApprovalGate({ secret: "" })).toThrow(GapError);
-    expect(
-      () => new HmacApprovalGate({ secret: new Uint8Array() }),
-    ).toThrow(GapError);
+    expect(() => new HmacApprovalGate({ secret: new Uint8Array() })).toThrow(
+      GapError,
+    );
     expect(
       () => new HmacApprovalGate({ secret: "test-secret", ttlMs: 0 }),
     ).toThrow(GapError);
@@ -191,7 +219,10 @@ describe("HmacApprovalGate", () => {
   });
 
   it("rejects invalid issue requests", async () => {
-    const gate = new HmacApprovalGate({ secret: "test-secret", now: () => NOW });
+    const gate = new HmacApprovalGate({
+      secret: "test-secret",
+      now: () => NOW,
+    });
 
     await expect(
       gate.issue({ action: "", args: {}, principalId: PRINCIPAL }),
@@ -199,8 +230,8 @@ describe("HmacApprovalGate", () => {
     await expect(
       gate.issue({ action: ACTION, args: {}, principalId: "" }),
     ).rejects.toBeInstanceOf(GapError);
-    await expect(
-      gate.issue({ ...REQUEST, ttlMs: 0 }),
-    ).rejects.toBeInstanceOf(GapError);
+    await expect(gate.issue({ ...REQUEST, ttlMs: 0 })).rejects.toBeInstanceOf(
+      GapError,
+    );
   });
 });

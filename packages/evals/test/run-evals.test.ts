@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ActionRegistry } from "gapmcp-core";
 import type { EvalCase, Planner, PlannerInput } from "../src/index";
-import { MockPlanner, reportToMarkdown, runEvals } from "../src/index";
+import { MockPlanner, formatEvalReport, reportToMarkdown, runEvals } from "../src/index";
 import { tool } from "./helpers";
 
 const listDescription = "Returns a paginated list of invoices for the current tenant.";
@@ -163,6 +163,7 @@ describe("runEvals", () => {
     expect(summary).toContain("PASS");
     expect(summary).toContain("FAIL");
     expect(summary).toContain("Confusion matrix");
+    expect(formatEvalReport(report)).toBe(summary);
 
     const parsed = JSON.parse(report.toJSON()) as {
       total: number;

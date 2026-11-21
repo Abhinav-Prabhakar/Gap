@@ -76,7 +76,10 @@ describe("buildDomManifest", () => {
     ]);
 
     const manifest = buildDomManifest(registry);
-    expect(Object.keys(manifest.actions[0]!.ui.fields ?? {})).toEqual(["alpha", "zebra"]);
+    expect(Object.keys(manifest.actions[0]!.ui.fields ?? {})).toEqual([
+      "alpha",
+      "zebra",
+    ]);
     expect(manifest.actions[0]!.scopes).toEqual(["one", "two"]);
     expect(manifest.actions[0]!.scopes).not.toBe(scopes);
     expect(manifest.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);

@@ -163,6 +163,7 @@ export class MemoryTracer implements Tracer {
   readonly #maxSpans: number;
   readonly #now: () => number;
 
+  /** Create a tracer retaining at most `maxSpans` finished or active spans. */
   constructor(options: MemoryTracerOptions = {}) {
     const maxSpans = options.maxSpans ?? 1000;
     if (!Number.isInteger(maxSpans) || maxSpans <= 0) {
@@ -174,6 +175,7 @@ export class MemoryTracer implements Tracer {
     this.#now = options.now ?? Date.now;
   }
 
+  /** Start and capture a span. The returned handle updates this record. */
   startSpan(name: string, attributes?: Record<string, unknown>): Span {
     const startMs = this.#now();
     const record: RecordedSpan = {
@@ -264,10 +266,12 @@ class ConsoleSpan implements Span {
 export class ConsoleTracer implements Tracer {
   readonly #logger: Logger;
 
+  /** Create a console tracer, optionally writing through a custom logger. */
   constructor(logger: Logger = createLogger("info")) {
     this.#logger = logger;
   }
 
+  /** Start a console-logged span. Attribute values are deliberately ignored. */
   startSpan(name: string, _attributes?: Record<string, unknown>): Span {
     safeLog(this.#logger, "debug", "span.start", { span: name });
     return new ConsoleSpan(name, this.#logger);

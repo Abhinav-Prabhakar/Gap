@@ -191,7 +191,12 @@ export class HmacApprovalGate implements ApprovalGate {
     } catch {
       return null;
     }
-    if (providedSignature.length !== HMAC_LENGTH) return null;
+    if (
+      providedSignature.length !== HMAC_LENGTH ||
+      base64UrlEncode(providedSignature) !== signatureSegment
+    ) {
+      return null;
+    }
 
     let expectedSignature: Uint8Array;
     try {

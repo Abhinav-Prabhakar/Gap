@@ -43,20 +43,19 @@ export interface MemoryAuditLogOptions {
  */
 export class MemoryAuditLog implements AuditSink {
   /** Recorded events, oldest first. */
-  readonly events: AuditEvent[] = [];
+  events: AuditEvent[] = [];
 
   private readonly max: number | undefined;
 
-  constructor(options: MemoryAuditLogOptions = {}) {
-    if (
-      options.max !== undefined &&
-      (!Number.isInteger(options.max) || options.max < 0)
-    ) {
+  /** Accepts `{ max }` or a numeric shorthand for the bound. */
+  constructor(options: MemoryAuditLogOptions | number = {}) {
+    const max = typeof options === "number" ? options : options.max;
+    if (max !== undefined && (!Number.isInteger(max) || max < 0)) {
       throw new GapError("Audit log max must be a non-negative integer.", {
         code: "INVALID_INPUT",
       });
     }
-    this.max = options.max;
+    this.max = max;
   }
 
   /** Append an event, evicting the oldest events when the bound is exceeded. */
@@ -102,7 +101,9 @@ export class JsonlAuditLog implements AuditSink {
       });
     }
     this.filePath = path;
-    this.ready = mkdir(dirname(path), { recursive: true }).then(() => undefined);
+    this.ready = mkdir(dirname(path), { recursive: true }).then(
+      () => undefined,
+    );
   }
 
   /** Queue one JSON line. Writes preserve call order. */

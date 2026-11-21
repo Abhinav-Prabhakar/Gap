@@ -1,5 +1,12 @@
-import type { EvalCase, EvalReport, EvalReportJSON, EvalResult, RunEvalsOptions, ToolChoice } from "./types";
-import type { ConfusionMatrix } from "./types";
+import type {
+  ConfusionMatrix,
+  EvalCase,
+  EvalReport,
+  EvalReportJSON,
+  EvalResult,
+  RunEvalsOptions,
+  ToolChoice,
+} from "./types";
 import { scoreArgs } from "./args";
 
 const NONE = "(none)";
@@ -82,10 +89,18 @@ export async function runEvals(options: RunEvalsOptions): Promise<EvalReport> {
   }
 
   const passed = results.filter((result) => result.passed).length;
-  return new EvalReportImpl(results.length, passed, results, buildConfusion(options.cases, results));
+  return new EvalReportImpl(
+    results.length,
+    passed,
+    results,
+    buildConfusion(options.cases, results),
+  );
 }
 
-function buildConfusion(cases: readonly EvalCase[], results: readonly EvalResult[]): ConfusionMatrix {
+function buildConfusion(
+  cases: readonly EvalCase[],
+  results: readonly EvalResult[],
+): ConfusionMatrix {
   const rows = [...new Set(cases.map((evalCase) => evalCase.expectedTool))].sort((left, right) =>
     left.localeCompare(right),
   );
@@ -113,7 +128,12 @@ function buildConfusion(cases: readonly EvalCase[], results: readonly EvalResult
     row[column] = (row[column] ?? 0) + 1;
   }
 
-  return { rows, columns, counts, matrix: rows.map((row) => columns.map((column) => counts[row]?.[column] ?? 0)) };
+  return {
+    rows,
+    columns,
+    counts,
+    matrix: rows.map((row) => columns.map((column) => counts[row]?.[column] ?? 0)),
+  };
 }
 
 function truncate(value: string, limit: number): string {
@@ -145,7 +165,11 @@ function resultDetail(result: EvalResult): string {
   return result.extraArgs.length > 0 ? `extra args: ${result.extraArgs.join(", ")}` : "";
 }
 
-function renderTable(headers: readonly string[], rows: readonly string[][], limits: readonly number[]): string {
+function renderTable(
+  headers: readonly string[],
+  rows: readonly string[][],
+  limits: readonly number[],
+): string {
   const prepared = rows.map((row) =>
     row.map((cell, index) => truncate(cell, limits[index] ?? Number.POSITIVE_INFINITY)),
   );

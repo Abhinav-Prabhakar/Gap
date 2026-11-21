@@ -67,10 +67,7 @@ export async function exchangeToken(
   const body = new URLSearchParams();
   body.set("grant_type", TOKEN_EXCHANGE_GRANT_TYPE);
   body.set("subject_token", subjectToken);
-  body.set(
-    "subject_token_type",
-    options.subjectTokenType ?? ACCESS_TOKEN_TYPE,
-  );
+  body.set("subject_token_type", options.subjectTokenType ?? ACCESS_TOKEN_TYPE);
   if (options.audience) body.set("audience", options.audience);
   if (options.scope && options.scope.length > 0) {
     body.set("scope", options.scope.join(" "));
@@ -103,13 +100,13 @@ export async function exchangeToken(
   }
 
   if (!response.ok) {
-    throw new GapError(
-      `Token exchange failed (HTTP ${response.status}).`,
-      {
-        code: "UNAVAILABLE",
-        details: await readErrorDetails(response),
-      },
-    );
+    throw new GapError(`Token exchange failed (HTTP ${response.status}).`, {
+      code: "UNAVAILABLE",
+      details: await readErrorDetails(response, [
+        subjectToken,
+        options.clientSecret,
+      ]),
+    });
   }
 
   let payload: unknown;
@@ -131,10 +128,13 @@ export async function exchangeToken(
 
   const accessToken = nonEmptyString(payload.access_token);
   if (!accessToken) {
-    throw new GapError("Token exchange response did not include access_token.", {
-      code: "UNAVAILABLE",
-      details: { status: response.status },
-    });
+    throw new GapError(
+      "Token exchange response did not include access_token.",
+      {
+        code: "UNAVAILABLE",
+        details: { status: response.status },
+      },
+    );
   }
 
   const tokenType = nonEmptyString(payload.token_type) ?? "Bearer";
@@ -149,25 +149,45 @@ export async function exchangeToken(
 
 async function readErrorDetails(
   response: Response,
+  secrets: ReadonlyArray<string | undefined>,
 ): Promise<Record<string, unknown>> {
   const details: Record<string, unknown> = { status: response.status };
-  try {
-    const text = await response.text();
-    if (!text || text.length > 16 * 1024) return details;
-    const parsed: unknown = JSON.parse(text);
-    if (!isRecord(parsed)) return details;
-    const error = nonEmptyString(parsed.error);
-    if (error) details.error = safeText(error);
-    const description = nonEmptyString(parsed.error_description);
-    if (description) details.errorDescription = safeText(description);
-  } catch {
-    // A non-JSON error body is intentionally ignored.
-  }
+  const parsed = await readErrorBody(response);
+  if (!isRecord(parsed)) return details;
+
+  const error = nonEmptyString(parsed.error);
+  if (error) details.error = safeText(error, secrets);
+  const description = nonEmptyString(parsed.error_description);
+  if (description) details.errorDescription = safeText(description, secrets);
   return details;
 }
 
-function safeText(value: string): string {
-  return value.replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, 500);
+async function readErrorBody(response: Response): Promise<unknown> {
+  try {
+    const text = await response.text();
+    if (!text || text.length > 16 * 1024) return undefined;
+    return JSON.parse(text);
+  } catch {
+    // Some fetch implementations only expose `json`. A real body that was
+    // already consumed will simply fail this fallback as well.
+    try {
+      return await response.json();
+    } catch {
+      return undefined;
+    }
+  }
+}
+
+function safeText(
+  value: string,
+  secrets: ReadonlyArray<string | undefined>,
+): string {
+  let result = value;
+  for (const secret of secrets) {
+    if (!secret) continue;
+    result = result.split(secret).join("[REDACTED]");
+  }
+  return result.replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, 500);
 }
 
 function readExpiresIn(value: unknown): number | undefined {
