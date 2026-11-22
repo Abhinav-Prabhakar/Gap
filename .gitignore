@@ -19,3 +19,5 @@ examples/*/.gap/
 dist-bin/
 python/dist/
 *.egg-info/
+dist-manifests/
+.release/

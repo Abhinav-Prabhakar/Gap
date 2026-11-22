@@ -121,3 +121,20 @@ gap doctor ./gap.actions.ts
 
 Checks Node version, platform, CLI version and optionally loads/lints a
 registry.
+
+## `gap release manifests`
+
+Maintainer command. Turns the release checksums into the Homebrew, Scoop and
+winget manifests:
+
+```bash
+gap release manifests \
+  --release-version 0.1.0 \
+  --checksums dist-bin/SHA256SUMS \
+  --out dist-manifests
+```
+
+It writes a tap-shaped `homebrew/Formula/gap.rb`, a `scoop/bucket/gap.json` and
+the three winget YAML files under
+`winget/manifests/a/AbhinavPrabhakar/Gap/<version>/`. Missing platform assets
+are an error, so an incomplete build cannot become an installable release.

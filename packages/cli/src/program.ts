@@ -15,6 +15,7 @@ import { loadRegistry } from "./load";
 import { startInspector } from "./inspector";
 import packageJson from "../package.json";
 import { scoreAgentReadiness } from "./score";
+import { parseChecksums, writeManifests } from "./manifests";
 
 function packageVersion(): string {
   return packageJson.version ?? "0.0.0";
@@ -451,6 +452,39 @@ export default actions;
         console.log(`${pc.cyan(tool.name)}  ${pc.dim(`${action?.risk ?? "low"} risk, ${(action?.scopes ?? []).join(", ") || "no scopes"}`)}`);
         console.log(`  ${tool.description}`);
       }
+    });
+
+  const release = program
+    .command("release")
+    .description("maintainer helpers for publishing a release");
+
+  release
+    .command("manifests")
+    .option("--release-version <version>", "release version; defaults to the CLI version")
+    .requiredOption("--checksums <file>", "SHA256SUMS produced by scripts/build-binaries.sh")
+    .option("--repository <owner/name>", "GitHub repository", "Abhinav-Prabhakar/Gap")
+    .option("--out <dir>", "directory for generated manifests", "dist-manifests")
+    .option("--date <date>", "release date recorded by winget (YYYY-MM-DD)")
+    .description("generate Homebrew, Scoop and winget manifests from release checksums")
+    .action((options: { releaseVersion?: string; checksums: string; repository: string; out: string; date?: string }) => {
+      const checksums = readFileSync(path.resolve(options.checksums), "utf8");
+      const assets = parseChecksums(checksums);
+      if (assets.length === 0) throw new Error(`No SHA-256 entries found in ${options.checksums}.`);
+      const version = options.releaseVersion ?? packageVersion();
+      const files = writeManifests(
+        { version, repository: options.repository, assets, releaseDate: options.date },
+        path.resolve(options.out),
+        (file, content) => {
+          mkdirSync(path.dirname(file), { recursive: true });
+          writeFileSync(file, content);
+        },
+        (dir) => mkdirSync(dir, { recursive: true }),
+      );
+      console.log(pc.bold(`Gap ${version} manifests`));
+      for (const file of files) console.log(`  ${file}`);
+      console.log(
+        pc.dim("Copy homebrew/ into the tap, scoop/bucket/ into the bucket, and winget/ into a winget-pkgs fork."),
+      );
     });
 
   return program;

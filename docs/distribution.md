@@ -100,3 +100,36 @@ gh attestation verify gap-darwin-arm64 --repo Abhinav-Prabhakar/Gap
 
 Binaries are built locally from the tagged commit; there is no CI. The release
 notes record the Bun version and the commands used.
+
+## Cutting a release
+
+There is no CI by design. One script performs the whole release:
+
+```bash
+NPM_CONFIG_OTP=123456 ./scripts/release.sh
+```
+
+It verifies TypeScript, Python and Go, publishes every workspace package, builds
+the five standalone binaries, generates the packaging manifests, tags
+`v<version>` (and `go/v<version>` for the nested Go module), creates the GitHub
+release, updates the tap and bucket, and opens the winget PR. Failed network
+steps can be retried in isolation:
+
+```bash
+SKIP_NPM=1 SKIP_CHECKS=1 ./scripts/release.sh
+```
+
+The manifests alone can be regenerated from a checksum file:
+
+```bash
+node packages/cli/dist/index.js release manifests \
+  --release-version 0.1.0 \
+  --checksums dist-bin/SHA256SUMS \
+  --out dist-manifests
+```
+
+This writes `homebrew/Formula/gap.rb`, `scoop/bucket/gap.json` and the three
+winget YAML files. They are committed to
+[`homebrew-tap`](https://github.com/Abhinav-Prabhakar/homebrew-tap),
+[`ScoopBucket`](https://github.com/Abhinav-Prabhakar/ScoopBucket) and a
+`winget-pkgs` fork respectively.
