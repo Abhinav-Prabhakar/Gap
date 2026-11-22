@@ -9,11 +9,11 @@ import (
 type CallStatus string
 
 const (
-	CallSuccess          CallStatus = "success"
-	CallError            CallStatus = "error"
-	CallApprovalRequired CallStatus = "approval_required"
-	CallTask             CallStatus = "task"
-	CallDryRun           CallStatus = "dry_run"
+	CallStatusSuccess          CallStatus = "success"
+	CallStatusError            CallStatus = "error"
+	CallStatusApprovalRequired CallStatus = "approval_required"
+	CallStatusTask             CallStatus = "task"
+	CallStatusDryRun           CallStatus = "dry_run"
 )
 
 // CallError is the safe error representation stored on a call record.
@@ -74,10 +74,10 @@ type CallFilter struct {
 
 // CallStore is a fixed-size, id-upserting ring buffer of tool calls.
 type CallStore struct {
-	mu     sync.Mutex
-	limit  int
-	items  []*CallRecord
-	byID   map[string]*CallRecord
+	mu    sync.Mutex
+	limit int
+	items []*CallRecord
+	byID  map[string]*CallRecord
 }
 
 // NewCallStore builds a call store. A non-positive limit uses 500.
@@ -111,7 +111,7 @@ func (s *CallStore) Put(record CallRecord) *CallRecord {
 	if s == nil {
 		return nil
 	}
-	copy := cloneCallRecord(record)
+	copy := cloneCallRecord(&record)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if existing, ok := s.byID[copy.ID]; ok {

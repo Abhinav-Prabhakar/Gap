@@ -460,10 +460,10 @@ func (c *composedAuth) ProtectedResourceMetadata() map[string]any {
 
 // ProtectedResourceMetadataOptions configures the RFC 9728 metadata document.
 type ProtectedResourceMetadataOptions struct {
-	Resource             string   `json:"resource"`
-	AuthorizationServers []string `json:"authorization_servers"`
-	ScopesSupported      []string `json:"scopes_supported,omitempty"`
-	ResourceDocumentation string  `json:"resource_documentation,omitempty"`
+	Resource              string   `json:"resource"`
+	AuthorizationServers  []string `json:"authorization_servers"`
+	ScopesSupported       []string `json:"scopes_supported,omitempty"`
+	ResourceDocumentation string   `json:"resource_documentation,omitempty"`
 }
 
 // ProtectedResourceMetadata builds an RFC 9728 protected resource metadata
@@ -482,11 +482,11 @@ func ProtectedResourceMetadata(options ProtectedResourceMetadataOptions) map[str
 		documentation = options.Resource
 	}
 	return map[string]any{
-		"resource":                options.Resource,
-		"authorization_servers":   servers,
-		"scopes_supported":        scopes,
+		"resource":                 options.Resource,
+		"authorization_servers":    servers,
+		"scopes_supported":         scopes,
 		"bearer_methods_supported": []string{"header"},
-		"resource_documentation":  documentation,
+		"resource_documentation":   documentation,
 	}
 }
 

@@ -53,9 +53,6 @@ func (l *MemoryAuditLog) Record(_ context.Context, event AuditEvent) error {
 	event = cloneAuditEvent(NewAuditEvent(event))
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if l.max == 0 {
-		return nil
-	}
 	l.events = append(l.events, event)
 	if l.max > 0 && len(l.events) > l.max {
 		l.events = append([]AuditEvent(nil), l.events[len(l.events)-l.max:]...)

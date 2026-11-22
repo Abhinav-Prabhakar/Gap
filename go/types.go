@@ -199,8 +199,8 @@ type AuditSink interface {
 
 // PolicyInput is the data a policy engine evaluates.
 type PolicyInput struct {
-	Action *Action
-	Args   any
+	Action  *Action
+	Args    any
 	Context *Context
 }
 

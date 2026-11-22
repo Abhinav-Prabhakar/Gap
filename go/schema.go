@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/santhosh-tekuri/jsonschema/v6"
+	"github.com/santhosh-tekuri/jsonschema/v6/kind"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -127,6 +128,16 @@ func flattenValidationError(err *jsonschema.ValidationError, issues *[]Validatio
 		return
 	}
 	path := strings.Join(err.InstanceLocation, ".")
+	if required, ok := err.ErrorKind.(*kind.Required); ok && len(required.Missing) > 0 {
+		for _, missing := range required.Missing {
+			missingPath := missing
+			if path != "" {
+				missingPath = path + "." + missing
+			}
+			*issues = append(*issues, ValidationIssue{Path: missingPath, Message: "Required property is missing.", Code: "required"})
+		}
+		return
+	}
 	if path == "" {
 		path = "(root)"
 	}

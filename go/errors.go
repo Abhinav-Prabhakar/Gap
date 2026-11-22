@@ -229,7 +229,9 @@ func TimeoutError(message string) *Error {
 	if strings.TrimSpace(message) == "" {
 		message = "The action timed out."
 	}
-	return NewError(message, CodeTimeout)
+	e := NewError(message, CodeTimeout)
+	e.Retryable = true
+	return e
 }
 
 // UnavailableError returns an UNAVAILABLE error.

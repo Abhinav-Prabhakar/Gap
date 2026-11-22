@@ -39,12 +39,12 @@ type tokenBucket struct {
 
 // TokenBucketRateLimiter is a continuous-refill token bucket.
 type TokenBucketRateLimiter struct {
-	mu       sync.Mutex
-	limit    int
-	window   time.Duration
-	now      func() time.Time
-	buckets  map[string]*tokenBucket
-	maxKeys  int
+	mu      sync.Mutex
+	limit   int
+	window  time.Duration
+	now     func() time.Time
+	buckets map[string]*tokenBucket
+	maxKeys int
 }
 
 // NewTokenBucketRateLimiter builds a limiter. Limit and Window must be

@@ -31,9 +31,16 @@ export async function loadRegistry(file: string): Promise<ActionRegistry> {
   const url = pathToFileURL(absolute).href;
   let imported: ModuleShape;
 
+  const isBun = typeof process !== "undefined" && Boolean(process.versions?.bun);
   if (absolute.endsWith(".ts") || absolute.endsWith(".mts") || absolute.endsWith(".cts")) {
-    const jiti = createJiti(import.meta.url, { interopDefault: true, moduleCache: false });
-    imported = (await jiti.import(absolute)) as ModuleShape;
+    if (isBun) {
+      // Bun (including a `bun build --compile` binary) transpiles TypeScript
+      // natively; jiti's Babel fallback is not present in a standalone build.
+      imported = (await import(url)) as ModuleShape;
+    } else {
+      const jiti = createJiti(import.meta.url, { interopDefault: true, moduleCache: false });
+      imported = (await jiti.import(absolute)) as ModuleShape;
+    }
   } else {
     imported = (await import(url)) as ModuleShape;
   }

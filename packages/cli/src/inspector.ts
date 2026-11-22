@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { AnyAction, ToolDescriptor } from "gapmcp-core";
@@ -301,6 +300,6 @@ function safeCalls(server: GapServer): Array<Record<string, unknown>> {
   }
 }
 
-const INSPECTOR_HTML = readFileSync(new URL("./inspector.html", import.meta.url), "utf8");
+import { INSPECTOR_HTML } from "./inspector-html";
 
 export const inspectorHtml = INSPECTOR_HTML;
