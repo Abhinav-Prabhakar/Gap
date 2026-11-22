@@ -16,6 +16,7 @@ import {
   NOOP_TRACER,
   normalizeError,
   redact,
+  searchActions,
   timeoutSignal,
   validateValue,
   VERSION,
@@ -91,6 +92,7 @@ const BUILTIN_NAMES: ReadonlySet<string> = new Set([
   "gap.tasks.get",
   "gap.tasks.cancel",
   "gap.receipts.get",
+  "gap.search",
   "gap.undo",
   "gap.handoff",
 ]);
@@ -301,6 +303,29 @@ function withAbort<T>(work: Promise<T>, signal: AbortSignal, message: () => stri
   });
 }
 
+const SEARCH_TOOL: Tool = {
+  name: "gap.search",
+  title: "Search actions",
+  description:
+    "Search the actions visible to this principal by intent. Use it when the tool list is large and you are unsure which action to call.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      query: { type: "string", description: "Natural-language description of the intent." },
+      limit: {
+        type: "integer",
+        minimum: 1,
+        maximum: 50,
+        description: "Maximum results. Defaults to 10.",
+      },
+    },
+    required: ["query"],
+    additionalProperties: false,
+  },
+  annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+  _meta: { "gap/builtin": true },
+};
+
 const TASKS_GET_TOOL: Tool = {
   name: "gap.tasks.get",
   title: "Get task",
@@ -394,6 +419,8 @@ function builtinDescriptor(name: string): Tool | undefined {
       return TASKS_CANCEL_TOOL;
     case "gap.receipts.get":
       return RECEIPTS_GET_TOOL;
+    case "gap.search":
+      return SEARCH_TOOL;
     case "gap.undo":
       return UNDO_TOOL;
     case "gap.handoff":
@@ -565,6 +592,7 @@ export class GapServer {
     const availability = this.#builtinAvailability(scopes);
     if (availability.tasks) tools.push(TASKS_GET_TOOL, TASKS_CANCEL_TOOL);
     if (availability.receipts) tools.push(RECEIPTS_GET_TOOL);
+    if (availability.search) tools.push(SEARCH_TOOL);
     if (availability.undo) tools.push(UNDO_TOOL);
     if (availability.handoff) tools.push(HANDOFF_TOOL);
     return tools.sort((a, b) => a.name.localeCompare(b.name));
@@ -1895,6 +1923,7 @@ export class GapServer {
   #builtinAvailability(scopes: readonly string[]): {
     tasks: boolean;
     receipts: boolean;
+    search: boolean;
     undo: boolean;
     handoff: boolean;
   } {
@@ -1902,6 +1931,7 @@ export class GapServer {
     return {
       tasks: this.#o.enableTasks,
       receipts: true,
+      search: actions.length > 12,
       undo: actions.some((action) => typeof action.undo === "function"),
       handoff: Boolean(this.#o.handoffSecret) && actions.some((action) => Boolean(action.ui)),
     };
@@ -1915,6 +1945,8 @@ export class GapServer {
         return availability.tasks;
       case "gap.receipts.get":
         return availability.receipts;
+      case "gap.search":
+        return availability.search;
       case "gap.undo":
         return availability.undo;
       case "gap.handoff":
@@ -1968,6 +2000,9 @@ export class GapServer {
           break;
         case "gap.receipts.get":
           outcome = await this.#builtinReceiptsGet(input, auth, traceId);
+          break;
+        case "gap.search":
+          outcome = this.#builtinSearch(input, auth, traceId);
           break;
         case "gap.undo":
           outcome = await this.#builtinUndo(input, auth, extra, traceId);
@@ -2030,6 +2065,30 @@ export class GapServer {
       });
       this.#safeEndSpan(span);
     }
+  }
+
+  #builtinSearch(
+    input: Record<string, unknown>,
+    auth: NormalizedAuth,
+    traceId: string,
+  ): BuiltinOutcome {
+    const query = input.query;
+    if (typeof query !== "string" || query.trim().length === 0) {
+      throw new GapError("A query is required.", { code: "INVALID_INPUT" });
+    }
+    const limit = typeof input.limit === "number" ? input.limit : 10;
+    const results = searchActions(this.registry, query, {
+      scopes: auth.scopes,
+      limit,
+    }).map((result) => ({
+      name: result.action.name,
+      description: result.action.description,
+      risk: result.action.risk ?? "low",
+      scopes: result.action.scopes ?? [],
+      score: result.score,
+    }));
+    const payload = { query, total: results.length, results };
+    return { response: successResult({ value: payload, traceId }), result: payload };
   }
 
   async #builtinTasksGet(

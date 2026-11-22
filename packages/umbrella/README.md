@@ -13,6 +13,6 @@ import { apiKeyAuth } from "gapmcp/auth";
 import { GapPolicy } from "gapmcp/policy";
 ```
 
-Subpaths: `gapmcp/server`, `gapmcp/auth`, `gapmcp/policy`, `gapmcp/observability`, `gapmcp/dom`.
+Subpaths: `gapmcp/server`, `gapmcp/auth`, `gapmcp/policy`, `gapmcp/observability`, `gapmcp/dom`, `gapmcp/importers`, `gapmcp/evals`. Install `gapmcp-cli` separately for the CLI and inspector.
 
 Part of [Gap](https://github.com/Abhinav-Prabhakar/Gap) — typed actions for agents. MIT licensed.

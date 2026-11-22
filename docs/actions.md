@@ -155,6 +155,69 @@ ui: {
 `gap dom` compiles this into a manifest and a dependency-free runtime; see
 [the fallback ladder](./fallback.md).
 
+## Compound skills
+
+When a workflow is deterministic, do not make the model orchestrate five calls.
+Compose actions into one tool:
+
+```ts
+import { defineSkill } from "gapmcp-core";
+
+export const invoiceCustomer = defineSkill({
+  name: "customers.invoice",
+  description: "Find a customer by name and create a draft invoice for them.",
+  input: z.object({ customer: z.string(), total: z.number().positive() }),
+  output: z.object({ invoiceId: z.string() }),
+  uses: [findCustomer, createInvoice],
+  execute: async ({ customer, total }, _ctx, run) => {
+    const found = await run<{ id: string }>(findCustomer, { query: customer });
+    const invoice = await run<{ id: string }>(createInvoice, { customerId: found.id, total });
+    return { invoiceId: invoice.id };
+  },
+});
+```
+
+`defineSkill` unions the scopes of every action it uses, so composition cannot
+bypass discovery or policy. The child actions run with the same context
+(principal, dry-run, signal, approval) as the parent.
+
+## Progressive disclosure
+
+A large catalog makes tool selection worse. `searchActions` ranks actions by
+name, tags and description, filtered to the caller's scopes:
+
+```ts
+import { searchActions } from "gapmcp-core";
+
+const matches = searchActions(registry, "refund a charge", {
+  scopes: ctx.scopes,
+  limit: 10,
+});
+```
+
+The server exposes the same ranking as `gap.search` once a principal can see
+more than 12 actions. The results include names, descriptions, risk and scopes,
+so the model can call the right tool without every schema in context.
+
+## Contract diff
+
+Treat the tool surface as an API. `diffRegistries` detects breaking changes
+before release:
+
+```ts
+import { diffRegistries } from "gapmcp-core";
+
+const diff = diffRegistries(previousActions, nextActions);
+if (!diff.compatible) {
+  console.error(diff.breaking);
+  process.exit(1);
+}
+```
+
+Removed actions, removed or newly required input fields, changed field types,
+narrowed enums and added scopes are breaking. Description, risk and deprecation
+changes are reported without failing.
+
 ## Context
 
 ```ts

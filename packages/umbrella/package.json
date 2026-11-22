@@ -31,6 +31,14 @@
     "./dom": {
       "types": "./dist/dom.d.ts",
       "import": "./dist/dom.js"
+    },
+    "./importers": {
+      "types": "./dist/importers.d.ts",
+      "import": "./dist/importers.js"
+    },
+    "./evals": {
+      "types": "./dist/evals.d.ts",
+      "import": "./dist/evals.js"
     }
   },
   "files": [
@@ -50,7 +58,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsup src/index.ts src/server.ts src/auth.ts src/policy.ts src/observability.ts src/dom.ts --format esm --dts --clean --sourcemap",
+    "build": "tsup src/index.ts src/server.ts src/auth.ts src/policy.ts src/observability.ts src/dom.ts src/importers.ts src/evals.ts --format esm --dts --clean --sourcemap",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -59,6 +67,8 @@
     "gapmcp-auth": "workspace:^",
     "gapmcp-policy": "workspace:^",
     "gapmcp-observability": "workspace:^",
-    "gapmcp-dom": "workspace:^"
+    "gapmcp-dom": "workspace:^",
+    "gapmcp-importers": "workspace:^",
+    "gapmcp-evals": "workspace:^"
   }
 }

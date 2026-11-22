@@ -1230,3 +1230,53 @@ describe("observability", () => {
     expect(taskSpan?.ended).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Progressive disclosure
+// ---------------------------------------------------------------------------
+
+describe("progressive disclosure", () => {
+  const many = Array.from({ length: 14 }, (_, index) =>
+    defineAction({
+      name: `catalog.item${index}`,
+      description:
+        index === 0
+          ? "Archive an old catalog item permanently."
+          : `Read catalog item ${index}. Read-only.`,
+      input: z.object({}),
+      scopes: index === 0 ? ["catalog:admin"] : ["catalog:read"],
+      execute: () => ({ index }),
+    }),
+  );
+
+  it("hides gap.search for a small registry", async () => {
+    const owner = await harness();
+    expect(await toolNames(owner.client)).not.toContain("gap.search");
+  });
+
+  it("ranks matching actions and filters by scope", async () => {
+    const allScopes: AuthProvider = {
+      authenticate: () => ({ principal: { id: "usr_all", scopes: ["*"] } }),
+    };
+    const owner = await harness({ registry: new ActionRegistry(many), auth: allScopes });
+    expect(await toolNames(owner.client)).toContain("gap.search");
+    const result = await call(owner.client, "gap.search", { query: "archive catalog item" });
+    expect(result.isError).toBe(false);
+    const results = result.structured.results as Array<{ name: string; score: number }>;
+    expect(results[0]).toMatchObject({ name: "catalog.item0" });
+    expect(results[0]?.score).toBeGreaterThan(0);
+
+    const reader = await harness(
+      {
+        registry: new ActionRegistry(many),
+        auth: { authenticate: () => ({ principal: { id: "usr_reader", scopes: ["catalog:read"] } }) },
+      },
+      "reader",
+    );
+    const filtered = await call(reader.client, "gap.search", { query: "archive catalog item" });
+    expect(filtered.isError).toBe(false);
+    const visible = filtered.structured.results as Array<{ name: string }>;
+    expect(visible.some((item) => item.name === "catalog.item0")).toBe(false);
+    expect(visible.some((item) => item.name === "catalog.item1")).toBe(true);
+  });
+});

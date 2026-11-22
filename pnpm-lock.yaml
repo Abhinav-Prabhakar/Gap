@@ -194,6 +194,12 @@ importers:
       gapmcp-dom:
         specifier: workspace:^
         version: link:../dom
+      gapmcp-evals:
+        specifier: workspace:^
+        version: link:../evals
+      gapmcp-importers:
+        specifier: workspace:^
+        version: link:../importers
       gapmcp-observability:
         specifier: workspace:^
         version: link:../observability

@@ -155,7 +155,7 @@ all of it to MCP tool descriptors and validates it like a contract.
 
 - **Compound skills** — `defineSkill` composes actions into one deterministic
   workflow, unioning scopes so composition cannot bypass policy.
-- **Progressive disclosure** — `searchActions` and a `tools.search` meta-tool
+- **Progressive disclosure** — `searchActions` and a `gap.search` meta-tool
   keep the visible tool count small as your surface grows.
 - **Contract lint** — missing descriptions, risky actions without confirmation,
   ambiguous siblings and context-cost estimates.

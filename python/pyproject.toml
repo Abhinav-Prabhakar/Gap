@@ -37,8 +37,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/gapmcp/gap"
-Repository = "https://github.com/gapmcp/gap"
+Homepage = "https://github.com/Abhinav-Prabhakar/Gap"
+Repository = "https://github.com/Abhinav-Prabhakar/Gap"
+Documentation = "https://github.com/Abhinav-Prabhakar/Gap/tree/main/python"
+Issues = "https://github.com/Abhinav-Prabhakar/Gap/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/gapmcp"]

@@ -13,7 +13,10 @@
     "test:watch": "vitest",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write .",
-    "demo": "tsx examples/demo/src/server.ts"
+    "demo": "tsx examples/demo/src/server.ts",
+    "test:python": "cd python && uv run --offline pytest -q",
+    "test:go": "cd go && go test -race -count=1 ./...",
+    "build:binaries": "./scripts/build-binaries.sh"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
