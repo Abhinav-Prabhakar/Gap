@@ -12,8 +12,20 @@ type ModuleShape = {
   registry?: unknown;
 };
 
+function isRegistryLike(value: unknown): value is ActionRegistry {
+  if (value instanceof ActionRegistry) return true;
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<ActionRegistry>;
+  return (
+    typeof candidate.list === "function" &&
+    typeof candidate.get === "function" &&
+    typeof candidate.visibleTo === "function" &&
+    typeof candidate.toToolDescriptors === "function"
+  );
+}
+
 function fromValue(value: unknown, file: string): ActionRegistry | undefined {
-  if (value instanceof ActionRegistry) return value;
+  if (isRegistryLike(value)) return value;
   if (isActionArray(value)) return new ActionRegistry(value);
   if (isActionDefinition(value)) return new ActionRegistry([value]);
   if (value && typeof value === "object") {

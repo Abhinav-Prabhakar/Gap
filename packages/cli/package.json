@@ -48,5 +48,8 @@
   },
   "bin": {
     "gap": "./dist/index.js"
+  },
+  "devDependencies": {
+    "zod": "^4.6.7"
   }
 }
