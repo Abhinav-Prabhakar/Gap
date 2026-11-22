@@ -16,4 +16,11 @@ gap dom ./gap.actions.ts --runtime gap.dom.js
 
 The inspector runs at `http://127.0.0.1:4400` with a live playground, call log and approval inbox.
 
+Prefer no Node dependency? Install the standalone binary:
+
+```bash
+brew install Abhinav-Prabhakar/tap/gap
+# scoop install gap · winget install AbhinavPrabhakar.Gap
+```
+
 Part of [Gap](https://github.com/Abhinav-Prabhakar/Gap) — typed actions for agents. MIT licensed.

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { createJiti } from "jiti";
@@ -34,9 +36,31 @@ export async function loadRegistry(file: string): Promise<ActionRegistry> {
   const isBun = typeof process !== "undefined" && Boolean(process.versions?.bun);
   if (absolute.endsWith(".ts") || absolute.endsWith(".mts") || absolute.endsWith(".cts")) {
     if (isBun) {
-      // Bun (including a `bun build --compile` binary) transpiles TypeScript
-      // natively; jiti's Babel fallback is not present in a standalone build.
-      imported = (await import(url)) as ModuleShape;
+      // A `bun build --compile` binary cannot load jiti's Babel runtime. Ask
+      // Bun's own bundler to compile the registry and its local imports into a
+      // cache file inside the project, leaving npm packages external so normal
+      // node_modules resolution still applies.
+      const bun = (globalThis as {
+        Bun?: {
+          build?: (options: Record<string, unknown>) => Promise<{ outputs: Array<{ path: string }> }>;
+        };
+      }).Bun;
+      if (!bun?.build) {
+        imported = (await import(url)) as ModuleShape;
+      } else {
+        const cacheKey = createHash("sha256").update(absolute).digest("hex").slice(0, 16);
+        const cacheDir = path.join(tmpdir(), "gap-cli-cache", cacheKey);
+        const built = await bun.build({
+          entrypoints: [absolute],
+          outdir: cacheDir,
+          target: "bun",
+          format: "esm",
+          naming: "[name]-[hash].[ext]",
+        });
+        const output = built.outputs[0];
+        if (!output) throw new Error(`Bun did not produce a build for ${file}.`);
+        imported = (await import(pathToFileURL(output.path).href)) as ModuleShape;
+      }
     } else {
       const jiti = createJiti(import.meta.url, { interopDefault: true, moduleCache: false });
       imported = (await jiti.import(absolute)) as ModuleShape;

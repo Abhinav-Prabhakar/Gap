@@ -16,3 +16,6 @@ __pycache__/
 .ruff_cache/
 go/bin/
 examples/*/.gap/
+dist-bin/
+python/dist/
+*.egg-info/

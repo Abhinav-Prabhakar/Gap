@@ -106,6 +106,13 @@ npm install gapmcp-core gapmcp-server gapmcp-auth gapmcp-policy zod
 npm install -D gapmcp-cli
 ```
 
+Or install the standalone CLI:
+
+```bash
+brew install Abhinav-Prabhakar/tap/gap
+# or: scoop install gap / winget install AbhinavPrabhakar.Gap
+```
+
 Define actions, mount the handler, connect a client:
 
 ```bash
@@ -340,6 +347,7 @@ See [`docs/deployment.md`](./docs/deployment.md).
 - [Evals](./docs/evals.md)
 - [CLI](./docs/cli.md)
 - [Deployment](./docs/deployment.md)
+- [Distribution](./docs/distribution.md)
 - [Design notes](./DESIGN.md)
 
 ## Roadmap
