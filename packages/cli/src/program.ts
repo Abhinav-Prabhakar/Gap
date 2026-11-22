@@ -13,15 +13,11 @@ import { importOpenApi } from "gapmcp-importers";
 import { buildDomManifest, renderDomRuntime } from "gapmcp-dom";
 import { loadRegistry } from "./load";
 import { startInspector } from "./inspector";
+import packageJson from "../package.json";
 import { scoreAgentReadiness } from "./score";
 
 function packageVersion(): string {
-  try {
-    const raw = readFileSync(new URL("../package.json", import.meta.url), "utf8");
-    return (JSON.parse(raw) as { version?: string }).version ?? "0.0.0";
-  } catch {
-    return "0.1.0";
-  }
+  return packageJson.version ?? "0.0.0";
 }
 
 function writeIfAllowed(file: string, content: string, force: boolean): boolean {

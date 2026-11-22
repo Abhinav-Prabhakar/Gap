@@ -26,15 +26,20 @@ build bun-linux-x64 gap-linux-x64
 build bun-linux-arm64 gap-linux-arm64
 build bun-windows-x64 gap-windows-x64.exe
 
-# Unix archives keep the executable bit and a predictable top-level name.
+# Unix archives contain a single `gap` executable.
 for name in gap-darwin-arm64 gap-darwin-x64 gap-linux-x64 gap-linux-arm64; do
   chmod +x "$OUT/$name"
-  tar -czf "$OUT/$name.tar.gz" -C "$OUT" "$name"
-  rm "$OUT/$name"
+  stage="$(mktemp -d)"
+  cp "$OUT/$name" "$stage/gap"
+  tar -czf "$OUT/$name.tar.gz" -C "$stage" gap
+  rm -rf "$stage" "$OUT/$name"
 done
 
-# Windows: a zip for Scoop, plus the bare exe for winget.
-zip -q -j "$OUT/gap-windows-x64.zip" "$OUT/gap-windows-x64.exe"
+# Windows: a zip containing `gap.exe` for Scoop, plus the bare exe for winget.
+stage="$(mktemp -d)"
+cp "$OUT/gap-windows-x64.exe" "$stage/gap.exe"
+zip -q -j "$OUT/gap-windows-x64.zip" "$stage/gap.exe"
+rm -rf "$stage" "$OUT/gap-windows-x64.exe"
 
 (
   cd "$OUT"
