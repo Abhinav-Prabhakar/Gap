@@ -34,8 +34,8 @@ function isExpired(record: ApprovalRecord, now: number): boolean {
 
 /**
  * In-memory {@link ApprovalStore}. Pending and approved records are deduplicated
- * by `(principalId, action, argsHash)`, which makes retries idempotent from the
- * approver's point of view.
+ * by `(principalId, tenantId, action, argsHash)`, which makes retries idempotent
+ * from the approver's point of view.
  */
 export class MemoryApprovalStore implements ApprovalStore {
   readonly #records = new Map<string, ApprovalRecord>();
@@ -67,6 +67,7 @@ export class MemoryApprovalStore implements ApprovalStore {
     const existing = [...this.#records.values()].find(
       (record) =>
         record.principalId === input.principalId &&
+        record.tenantId === input.tenantId &&
         record.action === input.action &&
         record.argsHash === input.argsHash &&
         (record.status === "pending" || record.status === "approved") &&
@@ -82,6 +83,7 @@ export class MemoryApprovalStore implements ApprovalStore {
     const record: ApprovalRecord = {
       id: createId("apr"),
       principalId: input.principalId,
+      tenantId: input.tenantId,
       action: input.action,
       argsHash: input.argsHash,
       status: "pending",
@@ -112,6 +114,7 @@ export class MemoryApprovalStore implements ApprovalStore {
     return [...this.#records.values()]
       .filter((record) => {
         if (filter.principalId !== undefined && record.principalId !== filter.principalId) return false;
+        if (filter.tenantId !== undefined && record.tenantId !== filter.tenantId) return false;
         if (filter.action !== undefined && record.action !== filter.action) return false;
         if (filter.argsHash !== undefined && record.argsHash !== filter.argsHash) return false;
         if (statuses && !statuses.has(record.status)) return false;

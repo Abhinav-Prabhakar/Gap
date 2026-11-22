@@ -220,6 +220,17 @@ runtime fill, submit and read the result — no vision, no guessing. If it still
 cannot finish, `gap.handoff` produces a signed, expiring deep link with the
 draft state so a human can take over. See [`docs/fallback.md`](./docs/fallback.md).
 
+### Agent readiness scan
+
+```bash
+gap score https://app.example.com
+```
+
+Checks an app for the signals an agent needs: an MCP endpoint, OpenAPI,
+RFC 9728 metadata, an auth challenge, semantic DOM hooks, health and
+`llms.txt`. It returns a score, a grade and one concrete recommendation per
+missing signal — useful before you instrument a third-party app.
+
 ### Evals before users find out
 
 ```bash
@@ -336,7 +347,6 @@ See [`docs/deployment.md`](./docs/deployment.md).
 - Hosted control plane: registry, OAuth broker, quotas, anomaly detection.
 - Multi-app gateway: one endpoint and one consent screen for many apps.
 - MCP UI resources (`ui://`) so approvals and receipts render as components.
-- Readiness score for public apps: spec, DOM and auth signals in one scan.
 - Record-a-human-once: turn an instrumented flow into an action stub.
 - More language ports (Rust, Java/Kotlin) and a conformance suite.
 

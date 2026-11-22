@@ -22,6 +22,7 @@ export interface StartTaskInput {
 /** Filter accepted by {@link TaskManager.list}. */
 export interface TaskFilter {
   principalId?: string;
+  tenantId?: string;
   action?: string;
   status?: TaskStatus | readonly TaskStatus[];
 }
@@ -142,6 +143,7 @@ export class TaskManager {
       .map((entry) => entry.record)
       .filter((record) => {
         if (filter.principalId !== undefined && record.principalId !== filter.principalId) return false;
+        if (filter.tenantId !== undefined && record.tenantId !== filter.tenantId) return false;
         if (filter.action !== undefined && record.action !== filter.action) return false;
         if (statuses && !statuses.has(record.status)) return false;
         return true;

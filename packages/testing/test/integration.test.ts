@@ -54,7 +54,7 @@ afterAll(async () => {
 describe("end-to-end MCP harness", () => {
   it("lists only tools visible to the principal", async () => {
     const tools = await listTools({ url: handle.url, token: "read-key" });
-    const names = tools.map((tool) => tool.name);
+    const names = tools.map((tool) => String(tool.name));
     expect(names).toContain("notes.list");
     expect(names).not.toContain("notes.create");
     expect(names.filter((name) => !name.startsWith("gap."))).toEqual(["notes.list"]);

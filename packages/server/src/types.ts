@@ -18,13 +18,14 @@ export type ApprovalStatus = "pending" | "approved" | "denied" | "consumed" | "e
 
 /**
  * One approval request. Records are keyed by
- * `(principalId, action, argsHash)` while pending or approved so an agent
- * retrying the same invocation finds the same approval instead of creating a
- * queue of duplicates.
+ * `(principalId, tenantId, action, argsHash)` while pending or approved so an
+ * agent retrying the same invocation finds the same approval instead of
+ * creating a queue of duplicates.
  */
 export interface ApprovalRecord {
   id: string;
   principalId: string;
+  tenantId?: string;
   action: string;
   /** Stable hash of the exact arguments the human is approving. */
   argsHash: string;
@@ -45,6 +46,7 @@ export interface ApprovalRecord {
 /** Input accepted by {@link ApprovalStore.create}. */
 export interface CreateApprovalInput {
   principalId: string;
+  tenantId?: string;
   action: string;
   argsHash: string;
   args?: unknown;
@@ -55,6 +57,7 @@ export interface CreateApprovalInput {
 /** Filter accepted by {@link ApprovalStore.list}. */
 export interface ApprovalFilter {
   principalId?: string;
+  tenantId?: string;
   action?: string;
   argsHash?: string;
   status?: ApprovalStatus | readonly ApprovalStatus[];

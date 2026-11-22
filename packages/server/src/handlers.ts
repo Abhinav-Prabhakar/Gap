@@ -34,7 +34,7 @@ export function createFetchHandler(options: GapServerOptions): GapFetchHandler {
  * listener.
  */
 export interface GapNodeHandler {
-  (req: IncomingMessage, res: ServerResponse): void;
+  (req: IncomingMessage, res: ServerResponse): Promise<void>;
   readonly server: GapServer;
   close(): Promise<void>;
 }
@@ -42,9 +42,8 @@ export interface GapNodeHandler {
 /** Create a standalone MCP server and return a Node request listener. */
 export function createNodeHandler(options: GapServerOptions): GapNodeHandler {
   const server = createGapServer(options);
-  const handler = ((req: IncomingMessage, res: ServerResponse) => {
-    void server.handleNode(req, res);
-  }) as GapNodeHandler;
+  const handler = ((req: IncomingMessage, res: ServerResponse) =>
+    server.handleNode(req, res)) as GapNodeHandler;
   Object.defineProperties(handler, {
     server: { value: server, enumerable: true },
     close: { value: () => server.close(), enumerable: true },

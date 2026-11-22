@@ -10,6 +10,7 @@ export interface CallStoreOptions {
 export interface CallFilter {
   limit?: number;
   principalId?: string;
+  tenantId?: string;
   action?: string;
   status?: CallStatus | readonly CallStatus[];
 }
@@ -82,24 +83,35 @@ export class CallStore {
     return record ? cloneCall(record) : undefined;
   }
 
-  /** List calls, newest first. */
-  list(filter: CallFilter = {}): CallRecord[] {
+  /**
+   * List calls, newest first. A number is accepted as a shorthand for
+   * `{ limit }`, which is convenient for inspectors.
+   */
+  list(filter: CallFilter | number = {}): CallRecord[] {
+    const normalized = typeof filter === "number" ? { limit: filter } : filter;
     const statuses =
-      filter.status === undefined
+      normalized.status === undefined
         ? undefined
-        : new Set<CallStatus>(Array.isArray(filter.status) ? filter.status : [filter.status]);
+        : new Set<CallStatus>(
+            Array.isArray(normalized.status) ? normalized.status : [normalized.status],
+          );
 
     const matches = [...this.#items]
       .reverse()
       .filter((record) => {
-        if (filter.principalId !== undefined && record.principalId !== filter.principalId) return false;
-        if (filter.action !== undefined && record.action !== filter.action) return false;
+        if (normalized.principalId !== undefined && record.principalId !== normalized.principalId) {
+          return false;
+        }
+        if (normalized.tenantId !== undefined && record.tenantId !== normalized.tenantId) return false;
+        if (normalized.action !== undefined && record.action !== normalized.action) return false;
         if (statuses && !statuses.has(record.status)) return false;
         return true;
       })
       .map(cloneCall);
 
-    if (filter.limit !== undefined && filter.limit >= 0) return matches.slice(0, filter.limit);
+    if (normalized.limit !== undefined && normalized.limit >= 0) {
+      return matches.slice(0, normalized.limit);
+    }
     return matches;
   }
 

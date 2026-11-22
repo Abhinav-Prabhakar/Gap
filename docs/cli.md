@@ -101,6 +101,18 @@ gap dom ./gap.actions.ts --out gap.dom.json --runtime gap.dom.js
 Compiles `ui` bindings into a manifest and browser runtime. See
 [the fallback ladder](./fallback.md).
 
+## `gap score`
+
+```bash
+gap score https://app.example.com
+gap score https://app.example.com --json
+```
+
+Scans a public app for agent-readiness signals: an MCP endpoint, an OpenAPI
+document, RFC 9728 metadata, an auth challenge, `data-gap-action` hooks, a
+health endpoint and `llms.txt`. The score is a heuristic, not a security audit;
+each missing signal comes with one recommendation.
+
 ## `gap doctor`
 
 ```bash

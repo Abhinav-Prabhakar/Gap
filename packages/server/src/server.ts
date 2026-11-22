@@ -143,6 +143,7 @@ interface SessionEntry {
   transport: WebStandardStreamableHTTPServerTransport;
   server: Server;
   principalId: string;
+  tenantId?: string;
   scopes: string[];
   createdAt: number;
 }
@@ -218,7 +219,12 @@ function toMcpTool(action: AnyAction): Tool {
   const input = objectSchemaForMcp(descriptor.inputSchema) ?? { type: "object", properties: {} };
   const output = objectSchemaForMcp(descriptor.outputSchema);
   const meta: Record<string, unknown> = { ...(descriptor._meta ?? {}) };
-  if (descriptor.outputSchema && !output) meta["gap/outputSchema"] = descriptor.outputSchema;
+  // Results can be an approval-required or task-started envelope that does not
+  // match the action's output schema, and errors carry `structuredContent.gapError`.
+  // Advertising the action schema as the MCP tool's `outputSchema` would make
+  // conforming clients reject those valid envelopes, so publish it as metadata
+  // and enforce it on the server instead.
+  if (output) meta["gap/outputSchema"] = output;
 
   const tool: Tool = {
     name: descriptor.name,
@@ -228,7 +234,6 @@ function toMcpTool(action: AnyAction): Tool {
     ...(descriptor.annotations ? { annotations: descriptor.annotations } : {}),
     ...(Object.keys(meta).length > 0 ? { _meta: meta } : {}),
   };
-  if (output) tool.outputSchema = output as Tool["outputSchema"];
   return tool;
 }
 
@@ -253,6 +258,16 @@ function auditDecisionForError(code: string): AuditDecision {
     default:
       return "error";
   }
+}
+
+/** True when a stored record belongs to the authenticated principal and tenant. */
+function isOwnedBy(
+  record: { principalId: string; tenantId?: string },
+  auth: NormalizedAuth,
+): boolean {
+  return (
+    record.principalId === auth.principal.id && record.tenantId === auth.principal.tenantId
+  );
 }
 
 /**
@@ -404,6 +419,10 @@ export class GapServer {
   readonly #o: ResolvedOptions;
   readonly #sessions = new Map<string, SessionEntry>();
   readonly #connections = new Set<ConnectionEntry>();
+  readonly #ephemeral = new Set<{
+    server: Server;
+    transport: WebStandardStreamableHTTPServerTransport;
+  }>();
   readonly #inFlight = new Map<string, Promise<RunOutcome>>();
   readonly #warned = new Set<string>();
   readonly #startedAt = Date.now();
@@ -636,6 +655,23 @@ export class GapServer {
       }),
     );
 
+    const ephemeral = [...this.#ephemeral];
+    this.#ephemeral.clear();
+    await Promise.allSettled(
+      ephemeral.map(async (entry) => {
+        try {
+          await entry.transport.close();
+        } catch {
+          // Already closed.
+        }
+        try {
+          await entry.server.close();
+        } catch {
+          // Already closed.
+        }
+      }),
+    );
+
     await this.tasks.close();
   }
 
@@ -834,6 +870,11 @@ export class GapServer {
       }
     }
     const document = this.#metadataDocument(request);
+    const challengeValue =
+      challenge && challenge.trim().length > 0 ? challenge.trim() : `Bearer realm="gap"`;
+    const authenticate = /resource_metadata=/i.test(challengeValue)
+      ? challengeValue
+      : `${challengeValue}, resource_metadata="${metadataUrl}"`;
     return jsonResponse(
       401,
       {
@@ -843,10 +884,7 @@ export class GapServer {
         protected_resource_metadata: document,
       },
       {
-        "www-authenticate":
-          challenge && challenge.trim().length > 0
-            ? challenge
-            : `Bearer realm="gap", resource_metadata="${metadataUrl}"`,
+        "www-authenticate": authenticate,
         link: `<${metadataUrl}>; rel="http://www.rfc-editor.org/rfc/rfc9728#metadata"`,
       },
     );
@@ -863,7 +901,10 @@ export class GapServer {
       if (!entry) {
         return jsonRpcError(404, -32001, "Session not found.");
       }
-      if (entry.principalId !== auth.principal.id) {
+      if (
+        entry.principalId !== auth.principal.id ||
+        entry.tenantId !== auth.principal.tenantId
+      ) {
         return jsonRpcError(403, -32002, "This session belongs to a different principal.");
       }
       return entry.transport.handleRequest(request, { authInfo: toAuthInfo(auth) });
@@ -893,6 +934,7 @@ export class GapServer {
           transport,
           server,
           principalId: auth.principal.id,
+          tenantId: auth.principal.tenantId,
           scopes: [...auth.scopes],
           createdAt: Date.now(),
         };
@@ -949,8 +991,18 @@ export class GapServer {
 
     try {
       await server.connect(transport);
-      const response = await transport.handleRequest(request, { authInfo: toAuthInfo(auth) });
-      return this.#closeWhenConsumed(response, server, transport);
+      const entry = { server, transport };
+      this.#ephemeral.add(entry);
+      let response: Response;
+      try {
+        response = await transport.handleRequest(request, { authInfo: toAuthInfo(auth) });
+      } catch (error) {
+        this.#ephemeral.delete(entry);
+        throw error;
+      }
+      return this.#closeWhenConsumed(response, server, transport, () => {
+        this.#ephemeral.delete(entry);
+      });
     } catch (error) {
       await transport.close().catch(() => undefined);
       await server.close().catch(() => undefined);
@@ -962,11 +1014,13 @@ export class GapServer {
     response: Response,
     server: Server,
     transport: WebStandardStreamableHTTPServerTransport,
+    onClose?: () => void,
   ): Response {
     let closed = false;
     const cleanup = async () => {
       if (closed) return;
       closed = true;
+      onClose?.();
       try {
         await transport.close();
       } catch {
@@ -1160,7 +1214,7 @@ export class GapServer {
       const explicitKey = readMetaString(meta, "idempotencyKey");
       const autoKey =
         explicitKey === undefined && action.idempotent === true
-          ? `auto:${await hashValue({ principalId: auth.principal.id, action: name, args })}`
+          ? `auto:${await hashValue({ principalId: auth.principal.id, action: name, args: input })}`
           : undefined;
       const idempotencyKey =
         explicitKey === undefined ? autoKey : `${auth.principal.id}:${explicitKey}`;
@@ -1251,6 +1305,7 @@ export class GapServer {
           name,
           rawArgs: args,
           input,
+          meta,
           argsHash,
           ctx,
           auth,
@@ -1318,6 +1373,7 @@ export class GapServer {
         name,
         rawArgs: args,
         input,
+        meta,
         argsHash,
         ctx,
         auth,
@@ -1401,6 +1457,7 @@ export class GapServer {
     name: string;
     rawArgs: Record<string, unknown>;
     input: unknown;
+    meta: Record<string, unknown>;
     argsHash: string;
     ctx: ActionContext;
     auth: NormalizedAuth;
@@ -1440,6 +1497,7 @@ export class GapServer {
         action,
         name,
         rawArgs: options.rawArgs,
+        meta: options.meta,
         argsHash,
         ctx,
         auth,
@@ -1679,21 +1737,27 @@ export class GapServer {
     action: AnyAction;
     name: string;
     rawArgs: Record<string, unknown>;
+    meta: Record<string, unknown>;
     argsHash: string;
     ctx: ActionContext;
     auth: NormalizedAuth;
     extra: ToolHandlerExtra;
     server: Server;
   }): Promise<ApprovalResolution> {
-    const { name, rawArgs, argsHash, auth, extra } = input;
+    const { name, rawArgs, meta, argsHash, auth, extra } = input;
     const principalId = auth.principal.id;
-    const token = readMetaString((extra._meta ?? {}) as Record<string, unknown>, "gap/approval");
+    const token = readMetaString(meta, "gap/approval");
 
     if (token && this.#o.approvalsConfigured) {
       const gate = this.#o.approvals;
       if (gate) {
         const grant = await gate.verify(token, { action: name, args: rawArgs, principalId });
-        if (!grant || grant.action !== name || grant.expiresAt <= Date.now()) {
+        if (
+          !grant ||
+          grant.action !== name ||
+          grant.argsHash !== argsHash ||
+          grant.expiresAt <= Date.now()
+        ) {
           throw new GapError("Invalid or expired approval token.", {
             code: "APPROVAL_REQUIRED",
             details: { reason: "invalid_token" },
@@ -1704,7 +1768,12 @@ export class GapServer {
     }
 
     const now = Date.now();
-    const records = await this.#o.approvalStore.list({ principalId, action: name, argsHash });
+    const records = await this.#o.approvalStore.list({
+      principalId,
+      tenantId: auth.principal.tenantId,
+      action: name,
+      argsHash,
+    });
 
     const approved = records.find(
       (record) => record.status === "approved" && record.expiresAt > now,
@@ -1738,6 +1807,7 @@ export class GapServer {
 
     const created = await this.#o.approvalStore.create({
       principalId,
+      tenantId: auth.principal.tenantId,
       action: name,
       argsHash,
       args: rawArgs,
@@ -1972,7 +2042,7 @@ export class GapServer {
       throw new GapError("A taskId is required.", { code: "INVALID_INPUT" });
     }
     const task = this.tasks.get(taskId);
-    if (!task || task.principalId !== auth.principal.id) {
+    if (!task || !isOwnedBy(task, auth)) {
       throw new GapError("Task not found.", { code: "NOT_FOUND" });
     }
     return {
@@ -1994,7 +2064,7 @@ export class GapServer {
       throw new GapError("A taskId is required.", { code: "INVALID_INPUT" });
     }
     const existing = this.tasks.get(taskId);
-    if (!existing || existing.principalId !== auth.principal.id) {
+    if (!existing || !isOwnedBy(existing, auth)) {
       throw new GapError("Task not found.", { code: "NOT_FOUND" });
     }
     const task = this.tasks.cancel(taskId);
@@ -2017,7 +2087,7 @@ export class GapServer {
       throw new GapError("A receiptId is required.", { code: "INVALID_INPUT" });
     }
     const call = this.calls.get(receiptId);
-    if (!call || !call.receipt || call.principalId !== auth.principal.id) {
+    if (!call || !call.receipt || !isOwnedBy(call, auth)) {
       throw new GapError("Receipt not found.", { code: "NOT_FOUND" });
     }
     const payload = {
@@ -2047,7 +2117,7 @@ export class GapServer {
       throw new GapError("A receiptId is required.", { code: "INVALID_INPUT" });
     }
     const call = this.calls.get(receiptId);
-    if (!call || !call.receipt || call.principalId !== auth.principal.id) {
+    if (!call || !call.receipt || !isOwnedBy(call, auth)) {
       throw new GapError("Receipt not found.", { code: "NOT_FOUND" });
     }
     if (call.undoneAt) {
