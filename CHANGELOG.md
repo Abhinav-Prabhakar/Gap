@@ -35,3 +35,10 @@ The first public alpha.
   checksums by `scripts/release.sh`.
 - Python (`gapmcp`) and Go (`github.com/Abhinav-Prabhakar/Gap/go`) ports.
 - Demo invoicing app, docs, security model and MIT license.
+
+### Known issues
+
+- The 0.1.0 CLI's `gap release manifests` omitted the winget
+  `# yaml-language-server` schema header, so winget rejected generated
+  manifests. Fixed on `main` and in the next release. The 0.1.0 manifests
+  submitted to `microsoft/winget-pkgs` already include the corrected header.
