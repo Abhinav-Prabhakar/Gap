@@ -4,7 +4,7 @@ All notable changes are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] — 2026-11-22
+## [0.1.0] — 2026-11-24
 
 The first public alpha.
 
@@ -27,7 +27,11 @@ The first public alpha.
 - `gapmcp-evals`: subset argument scoring, forbidden tools, confusion matrix,
   mock/HTTP planners and a description linter.
 - `gapmcp-testing`: action and end-to-end MCP test harness.
-- `gapmcp-cli`: `gap init/import/lint/evals/inspect/serve/dom/doctor` and the
-  local inspector.
+- `gapmcp-cli`: `gap init/import/lint/evals/inspect/serve/dom/score/doctor`,
+  the local inspector, and `gap release manifests` for packaging.
+- Standalone `gap` binaries for macOS (arm64, x64), Linux (arm64, x64) and
+  Windows x64, built with Bun. They run without Node.js.
+- Packaging for npm, Homebrew, Scoop and winget, generated from the release
+  checksums by `scripts/release.sh`.
 - Python (`gapmcp`) and Go (`github.com/Abhinav-Prabhakar/Gap/go`) ports.
 - Demo invoicing app, docs, security model and MIT license.
