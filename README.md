@@ -5,6 +5,8 @@ operation and a semantic UI binding — with delegated identity, policy,
 approvals, audit and evals built in.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-c8f169)](./LICENSE)
+[![npm](https://img.shields.io/npm/v/gapmcp?label=npm&color=cb3837)](https://www.npmjs.com/package/gapmcp)
+[![release](https://img.shields.io/github/v/release/Abhinav-Prabhakar/Gap?color=c8f169)](https://github.com/Abhinav-Prabhakar/Gap/releases)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-0a0c0f)](https://nodejs.org)
 [![MCP](https://img.shields.io/badge/MCP-Streamable%20HTTP-0a0c0f)](https://modelcontextprotocol.io)
 [![Status](https://img.shields.io/badge/status-alpha-e3b341)](#roadmap)
@@ -110,8 +112,12 @@ Or install the standalone CLI:
 
 ```bash
 brew install Abhinav-Prabhakar/tap/gap
-# or: scoop install gap / winget install AbhinavPrabhakar.Gap
+# or: scoop install gap
+# or: winget install AbhinavPrabhakar.Gap   (manifest in review)
 ```
+
+Prebuilt binaries for macOS, Linux and Windows are attached to the
+[v0.1.0 release](https://github.com/Abhinav-Prabhakar/Gap/releases/tag/v0.1.0).
 
 Define actions, mount the handler, connect a client:
 
@@ -311,9 +317,9 @@ pnpm gap inspect examples/demo/src/actions.ts --token demo-key
 
 | Language | Status | Location |
 | --- | --- | --- |
-| TypeScript / Node | alpha, reference implementation | `packages/` |
-| Python | alpha port (`pip install gapmcp`) | [`python/`](./python) |
-| Go | alpha port (`go get github.com/Abhinav-Prabhakar/Gap/go`) | [`go/`](./go) |
+| TypeScript / Node | alpha, reference implementation; on npm | `packages/` |
+| Python | alpha port; wheel attached to the v0.1.0 release (PyPI pending) | [`python/`](./python) |
+| Go | alpha port (`go get github.com/Abhinav-Prabhakar/Gap/go@v0.1.0`) | [`go/`](./go) |
 
 The ports share the contract and the wire behaviour, not the code. They are
 tested against the same fixtures and the same MCP client expectations.

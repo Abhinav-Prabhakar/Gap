@@ -8,10 +8,11 @@ approvals, rate limits and validation, runs it with a timeout, redacts the
 result, writes an audit event and stores a receipt.
 
 ```bash
-pip install gapmcp
+# PyPI publication is pending. Install the wheel from the release meanwhile:
+pip install https://github.com/Abhinav-Prabhakar/Gap/releases/download/v0.1.0/gapmcp-0.1.0-py3-none-any.whl
 ```
 
-Python 3.10+.
+Python 3.10+. The package name on PyPI will be `gapmcp`.
 
 ## Quick start
 

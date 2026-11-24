@@ -19,6 +19,8 @@ are the supported SDKs; Go runs the same server contract.
 | `gapmcp-testing` | Test harness |
 | `gapmcp-cli` | `gap` CLI and inspector |
 
+Published as `0.1.0`:
+
 ```bash
 npm install gapmcp
 npm install -D gapmcp-cli
@@ -43,11 +45,17 @@ transpiler, so project dependencies still need to be installed.
 
 ## Homebrew
 
+The formula is live in
+[`homebrew-tap`](https://github.com/Abhinav-Prabhakar/homebrew-tap):
+
 ```bash
 brew install Abhinav-Prabhakar/tap/gap
 ```
 
 ## Scoop
+
+The manifest is live in
+[`ScoopBucket`](https://github.com/Abhinav-Prabhakar/ScoopBucket):
 
 ```powershell
 scoop bucket add abhinav https://github.com/Abhinav-Prabhakar/ScoopBucket
@@ -60,15 +68,19 @@ scoop install gap
 winget install AbhinavPrabhakar.Gap
 ```
 
-Manifests live in [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs)
-under `manifests/a/Abhinav-Prabhakar/Gap`.
+The manifest is submitted in
+[microsoft/winget-pkgs#488247](https://github.com/microsoft/winget-pkgs/pull/488247)
+and is awaiting validation and merge. It lives under
+`manifests/a/AbhinavPrabhakar/Gap/0.1.0`.
 
 ## Python
 
+PyPI publication is pending. The wheel and sdist are attached to the
+[v0.1.0 release](https://github.com/Abhinav-Prabhakar/Gap/releases/tag/v0.1.0):
+
 ```bash
-pip install gapmcp
-# or
-uv add gapmcp
+pip install https://github.com/Abhinav-Prabhakar/Gap/releases/download/v0.1.0/gapmcp-0.1.0-py3-none-any.whl
+# once published: pip install gapmcp / uv add gapmcp
 ```
 
 ```python
@@ -81,7 +93,7 @@ The Python package mirrors the action contract and server pipeline. It lives in
 ## Go
 
 ```bash
-go get github.com/Abhinav-Prabhakar/Gap/go
+go get github.com/Abhinav-Prabhakar/Gap/go@v0.1.0
 ```
 
 ```go
