@@ -81,15 +81,19 @@ describe("release manifests", () => {
     expect(version).toContain("PackageIdentifier: AbhinavPrabhakar.Gap");
     expect(version).toContain("PackageVersion: 1.2.3");
     expect(version).toContain("ManifestType: version");
+    expect(version.startsWith("# yaml-language-server: $schema=https://aka.ms/winget-manifest.version.1.28.0.schema.json")).toBe(true);
+    expect(version).toContain("ManifestVersion: 1.28.0");
     expect(installer).toContain("InstallerType: zip");
     expect(installer).toContain("NestedInstallerType: portable");
     expect(installer).toContain("RelativeFilePath: gap.exe");
     expect(installer).toContain("PortableCommandAlias: gap");
     expect(installer).toContain(`InstallerSha256: ${"E".repeat(64)}`);
     expect(installer).toContain("ReleaseDate: 2026-11-22");
+    expect(installer.startsWith("# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.28.0.schema.json")).toBe(true);
     expect(locale).toContain("PackageLocale: en-US");
     expect(locale).toContain("License: MIT");
     expect(locale).toContain("ManifestType: defaultLocale");
+    expect(locale.startsWith("# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.28.0.schema.json")).toBe(true);
   });
 
   it("normalizes a v-prefixed version and a full repository URL", () => {
