@@ -75,6 +75,11 @@ fi
 (
   cd "$OUT"
   shasum -a 256 ./*.tar.gz ./*.zip > SHA256SUMS
+  # Per-asset checksums let Scoop's autoupdate verify a download without
+  # parsing the combined checksum file.
+  for file in ./*.tar.gz ./*.zip; do
+    shasum -a 256 "$file" | cut -d' ' -f1 > "$file.sha256"
+  done
 )
 
 echo

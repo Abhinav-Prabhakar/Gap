@@ -198,10 +198,10 @@ if [ "$SKIP_GITHUB_RELEASE" != "1" ]; then
   fi
 
   if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
-    gh release upload "$TAG" "$OUT"/*.tar.gz "$OUT"/*.zip "$OUT/SHA256SUMS" --repo "$REPO" --clobber
+    gh release upload "$TAG" "$OUT"/*.tar.gz "$OUT"/*.zip "$OUT"/*.sha256 "$OUT/SHA256SUMS" --repo "$REPO" --clobber
     info "uploaded assets to existing release $TAG"
   else
-    gh release create "$TAG" "$OUT"/*.tar.gz "$OUT"/*.zip "$OUT/SHA256SUMS" \
+    gh release create "$TAG" "$OUT"/*.tar.gz "$OUT"/*.zip "$OUT"/*.sha256 "$OUT/SHA256SUMS" \
       --repo "$REPO" \
       --title "Gap $VERSION" \
       --generate-notes

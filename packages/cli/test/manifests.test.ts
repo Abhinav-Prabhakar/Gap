@@ -73,6 +73,7 @@ describe("release manifests", () => {
     expect(manifest.architecture["64bit"].url).toContain("/v1.2.3/gap-windows-x64.zip");
     expect(manifest.checkver.github).toBe("https://github.com/Abhinav-Prabhakar/Gap");
     expect(manifest.autoupdate.architecture["64bit"].url).toContain("/v$version/gap-windows-x64.zip");
+    expect(manifest.autoupdate.architecture["64bit"].hash).toEqual({ url: "$url.sha256" });
   });
 
   it("renders three winget manifests with an uppercase hash", () => {

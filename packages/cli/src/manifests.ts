@@ -165,6 +165,7 @@ export function renderScoopManifest(options: ReleaseManifestOptions): string {
       architecture: {
         "64bit": {
           url: `https://github.com/${repository}/releases/download/v$version/${archive}`,
+          hash: { url: "$url.sha256" },
         },
       },
     },
